@@ -1,0 +1,4 @@
+attrs>=19.1
+cryptoparser>=0.6.0
+cryptolyzer>=0.6.0
+urllib3
