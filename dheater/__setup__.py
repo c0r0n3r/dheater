@@ -2,7 +2,7 @@
 
 __title__ = 'DHEater'
 __version__ = '0.1.0'
-__description__ = 'D(HE)ater is an attacking tool heating the CPU by enforcing DHE KEX in case of TLS'
+__description__ = 'D(HE)ater is an attacking tool heating the CPU by enforcing DHE KEX in case of TLS and SSH'
 __author__ = 'BalaSys IT Security'
 __maintainer__ = 'Szilárd Pfeiffer'
 __maintainer_email__ = 'szilard.pfeiffer@balasys.hu'

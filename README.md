@@ -2,7 +2,7 @@
 
 D(HE)ater is an attacking tool based on CPU heating in that it forces the ephemeral variant of
 [Diffie-Hellman key exchange](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange) (DHE) in given
-cryptography protocols (e.g. TLS). It is performed without calculating a cryptographically correct ephemeral key on
+cryptography protocols (e.g. TLS, SSH). It is performed without calculating a cryptographically correct ephemeral key on
 the client side, but with a significant amount of calculation on the server side. Based on this, D(HE)ater can initiate 
 a [denial-of-service (DoS) attack](https://en.wikipedia.org/wiki/Denial-of-service_attack).
 
@@ -14,6 +14,7 @@ D(HE)ater can be installed directly via [pip](https://pip.pypa.io/en/stable/) fr
 ```console
 pip install dheater
 dheat --protocol tls www.example.com
+dheat --protocol ssh www.example.com
 ```
 
 or can be used via [Docker](https://www.docker.com/) from
@@ -22,6 +23,7 @@ or can be used via [Docker](https://www.docker.com/) from
 ```console
 docker pull balasys/dheater
 docker run --rm balasys/dheater --protocol tls www.example.com
+docker run --rm balasys/dheater --protocol ssh www.example.com
 ```
 
 You can increase a load by string extra threads.
@@ -29,6 +31,7 @@ You can increase a load by string extra threads.
 ```console
 dheat --thread-num 4 --protocol tls www.example.com
 docker run --rm balasys/dheater --thread-num 4 --protocol tls www.example.com
+docker run --rm balasys/dheater --thread-num 4 --protocol ssh www.example.com
 ```
 
 ## Mitigation
@@ -84,6 +87,17 @@ port    = pop3,pop3s,imap,imaps,submission,465,sieve
 logpath = %(dovecot_log)s
 backend = %(dovecot_backend)s
 maxretry = 1
+```
+
+#### SSH
+
+##### OpenSSH
+
+There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+
+```ini
+[sshd]
+mode = ddos
 ```
 
 ## License
