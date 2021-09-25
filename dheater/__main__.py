@@ -17,6 +17,8 @@ from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
 
 from cryptolyzer.common.exception import SecurityError
+import cryptolyzer.tls.dhparams
+import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
     TlsHandshakeClientHelloKeyExchangeDHE,
@@ -36,6 +38,9 @@ class DHEnforcerThreadStats(threading.Thread):
 class DHEnforcerThreadBase(threading.Thread):
     uri = attr.ib(validator=attr.validators.instance_of(urllib3.util.url.Url))
     timeout = attr.ib(validator=attr.validators.instance_of(int))
+    pre_check_result = attr.ib(
+        default=None, validator=attr.validators.optional(attr.validators.instance_of(object))
+    )
     message_bytes = attr.ib(init=False, default=bytearray(), validator=attr.validators.instance_of(bytearray))
     stop = attr.ib(init=False, default=False, validator=attr.validators.instance_of(bool))
     stats = attr.ib(
@@ -54,7 +59,14 @@ class DHEnforcerThreadBase(threading.Thread):
     def _send_packets(self, client):
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def _pre_check(self):
+        raise NotImplementedError()
+
     def __attrs_post_init__(self):
+        if self.pre_check_result is None:
+            self._pre_check()
+
         threading.Thread.__init__(self)
 
         self.message_bytes = self._prepare_packets()
@@ -78,6 +90,15 @@ class DHEnforcerThreadBase(threading.Thread):
 
 
 class DHEnforcerThreadTLS(DHEnforcerThreadBase):
+    def _pre_check(self):
+        analyzer = cryptolyzer.tls.versions.AnalyzerVersions()
+        analyzer_result_versions = analyzer.analyze(self._get_client(), None)
+
+        analyzer = cryptolyzer.tls.dhparams.AnalyzerDHParams()
+        self.pre_check_result = analyzer.analyze(self._get_client(), min(analyzer_result_versions.versions))
+        if not self.pre_check_result.dhparams:
+            raise NotImplementedError()
+
     def _get_client(self):
         if self.uri.scheme is None:
             scheme = 'tls'
@@ -123,9 +144,11 @@ def main():
     threads = []
 
     try:
+        pre_check_result = None
         for _ in range(args.thread_mum):
             if args.protocol == 'tls':
-                enforcer = DHEnforcerThreadTLS(args.uri, args.timeout)
+                enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
+            pre_check_result = enforcer.pre_check_result
             threads.append(enforcer)
             enforcer.start()
 
@@ -149,6 +172,8 @@ def main():
 
         while True:
             time.sleep(0.2)
+    except NotImplementedError:
+        print(f'Diffie-Hellman ephemeral (DHE) key exchange not supported by the server; uri="{args.uri}"')
     except KeyboardInterrupt:
         for thread in threads:
             thread.stop = True
