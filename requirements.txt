@@ -1,4 +1,4 @@
 attrs>=19.1
 cryptoparser>=0.7.1
-cryptolyzer>=0.7.1
+cryptolyzer>=0.7.2
 urllib3

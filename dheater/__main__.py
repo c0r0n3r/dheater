@@ -17,10 +17,12 @@ from cryptoparser.common.exception import InvalidType, NotEnoughData
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
 
-from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH
+from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
 from cryptoparser.ssh.subprotocol import (
     SshProtocolMessage,
     SshKexAlgorithmVector,
+    SshDHGroupExchangeInit,
+    SshDHGroupExchangeRequest,
     SshDHKeyExchangeInit,
 )
 from cryptoparser.ssh.version import SshProtocolVersion, SshVersion
@@ -113,7 +115,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
     def _pre_check(self):
         analyzer = cryptolyzer.ssh.dhparams.AnalyzerDHParams()
         self.pre_check_result = analyzer.analyze(self._get_client())
-        if self.pre_check_result.key_exchange is None:
+        if self.pre_check_result.key_exchange is None and self.pre_check_result.group_exchange is None:
             raise NotImplementedError()
 
     def _get_client(self):
@@ -124,6 +126,21 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
         return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
 
+    def _get_algorithm_with_greatest_key_size(self):
+        algorithm_with_greatest_key_size = None
+        if self.pre_check_result.key_exchange.kex_algorithms:
+            algorithm_with_greatest_key_size = sorted(
+                self.pre_check_result.key_exchange.kex_algorithms,
+                key=lambda algorithm: algorithm.value.key_size,
+                reverse=True
+            )[0]
+        if (algorithm_with_greatest_key_size is None or
+            (self.pre_check_result.group_exchange.key_sizes and
+                self.pre_check_result.group_exchange.key_sizes[-1] > algorithm_with_greatest_key_size.value.key_size)):
+            algorithm_with_greatest_key_size = self.pre_check_result.group_exchange.gex_algorithms[0]
+
+        return algorithm_with_greatest_key_size
+
     def _prepare_packets(self):
         message_bytes = bytearray()
         protocol_message = SshProtocolMessage(
@@ -133,17 +150,16 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm()
         message_bytes += protocol_message.compose()
 
-        key_exchange_algorithm_with_greatest_key_size = sorted(
-            self.pre_check_result.key_exchange.kex_algorithms,
-            key=lambda algorithm: algorithm.value.key_size,
-            reverse=True
-        )[0]
+        key_exchange_algorithm_with_greatest_key_size = self._get_algorithm_with_greatest_key_size()
         key_exchange_init_message.kex_algorithms = SshKexAlgorithmVector(
             [key_exchange_algorithm_with_greatest_key_size, ]
         )
         message_bytes += SshRecordInit(key_exchange_init_message).compose()
 
-        key_size = key_exchange_algorithm_with_greatest_key_size.value.key_size
+        if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
+            key_size = key_exchange_algorithm_with_greatest_key_size.value.key_size
+        else:
+            key_size = self.pre_check_result.group_exchange.key_sizes[-1]
 
         well_known_dh_param_with_matching_key_size = [
             well_known_dh_param
@@ -155,8 +171,17 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         )
         dh_ephemeral_public_key_bytes = int_to_bytes(dh_ephemeral_public_key, key_size).lstrip(b'\x00')
 
-        dh_key_exchange_init_message = SshDHKeyExchangeInit(dh_ephemeral_public_key_bytes)
-        message_bytes += SshRecordKexDH(dh_key_exchange_init_message).compose()
+        if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
+            dh_key_exchange_init_message = SshDHKeyExchangeInit(dh_ephemeral_public_key_bytes)
+            message_bytes += SshRecordKexDH(dh_key_exchange_init_message).compose()
+        else:
+            dh_group_exchange_request_message = SshDHGroupExchangeRequest(
+                gex_min=key_size, gex_max=key_size, gex_number=key_size
+            )
+            message_bytes += SshRecordKexDHGroup(dh_group_exchange_request_message).compose()
+
+            dh_group_exchange_init_message = SshDHGroupExchangeInit(dh_ephemeral_public_key_bytes)
+            message_bytes += SshRecordKexDHGroup(dh_group_exchange_init_message).compose()
 
         return message_bytes
 
