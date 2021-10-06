@@ -31,6 +31,61 @@ dheat --thread-num 4 --protocol tls www.example.com
 docker run --rm balasys/dheater --thread-num 4 --protocol tls www.example.com
 ```
 
+## Mitigation
+
+### Fail2Ban
+
+#### TLS
+
+#### Apache
+
+There is no necessary filters.
+
+1. `apache-ssl.conf` in `fail2ban` directory should be copied `filter.d` directory under the fail2ban configuration
+    directory
+1. the followings should be added to `jail.local` file in fail2ban configuration directory
+
+```ini
+[apache-ssl]
+
+port    = https
+logpath = %(apache_error_log)s
+maxretry = 1
+```
+
+##### Postfix
+
+There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+
+```ini
+[postfix]
+mode = ddos
+```
+
+##### Dovecot
+
+There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+
+```ini
+[dovecot]
+mode = aggressive
+```
+
+or a specific filter can be used without changing the mode of the dovecot filter.
+
+1. `dovecot-ssl.conf` in `fail2ban` directory should be copied `filter.d` directory under the fail2ban configuration
+    directory
+1. the followings should be added to `jail.local` file in fail2ban configuration directory
+
+```ini
+[dovecot-ssl]
+
+port    = pop3,pop3s,imap,imaps,submission,465,sieve
+logpath = %(dovecot_log)s
+backend = %(dovecot_backend)s
+maxretry = 1
+```
+
 ## License
 
 The code is available under the terms of Apache License Version 2.0. 
