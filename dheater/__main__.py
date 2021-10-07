@@ -318,7 +318,7 @@ def main():
                 thread.stats.succeeded_request_num + thread.stats.failed_request_num
                 for thread in threads
             ]),
-            (sum([ thread.stats.succeeded_request_num + thread.stats.failed_request_num for thread in threads ]) /
+            (sum([thread.stats.succeeded_request_num + thread.stats.failed_request_num for thread in threads]) /
                 sum([thread.stats.time_interval for thread in threads])),
             sum([
                 thread.stats.failed_request_num / (thread.stats.succeeded_request_num + thread.stats.failed_request_num)
