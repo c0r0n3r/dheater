@@ -292,7 +292,10 @@ def main():
         while True:
             time.sleep(0.2)
     except NotImplementedError:
-        print(f'Diffie-Hellman ephemeral (DHE) key exchange not supported by the server; uri="{args.uri}"')
+        print(
+            f'Diffie-Hellman ephemeral (DHE) key exchange not supported by the server; '
+            f'uri="{args.uri}", protocol="{args.protocol}"'
+        )
     except KeyboardInterrupt:
         for thread in threads:
             thread.stop = True
