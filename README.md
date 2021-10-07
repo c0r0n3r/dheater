@@ -13,8 +13,8 @@ D(HE)ater can be installed directly via [pip](https://pip.pypa.io/en/stable/) fr
 
 ```console
 pip install dheater
-dheat --protocol tls www.example.com
-dheat --protocol ssh www.example.com
+dheat --protocol tls ecc256.badssl.com
+dheat --protocol ssh ecc256.badssl.com
 ```
 
 or can be used via [Docker](https://www.docker.com/) from
@@ -22,16 +22,16 @@ or can be used via [Docker](https://www.docker.com/) from
 
 ```console
 docker pull balasys/dheater
-docker run --tty --rm balasys/dheater --protocol tls www.example.com
-docker run --tty --rm balasys/dheater --protocol ssh www.example.com
+docker run --tty --rm balasys/dheater --protocol tls ecc256.badssl.com
+docker run --tty --rm balasys/dheater --protocol ssh ecc256.badssl.com
 ```
 
 You can increase a load by string extra threads.
 
 ```console
-dheat --thread-num 4 --protocol tls www.example.com
-docker run --tty --rm balasys/dheater --thread-num 4 --protocol tls www.example.com
-docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh www.example.com
+dheat --thread-num 4 --protocol tls ecc256.badssl.com
+docker run --tty --rm balasys/dheater --thread-num 4 --protocol tls ecc256.badssl.com
+docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
 ```
 
 ## Mitigation
