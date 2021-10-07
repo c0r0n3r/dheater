@@ -22,16 +22,16 @@ or can be used via [Docker](https://www.docker.com/) from
 
 ```console
 docker pull balasys/dheater
-docker run --rm balasys/dheater --protocol tls www.example.com
-docker run --rm balasys/dheater --protocol ssh www.example.com
+docker run --tty --rm balasys/dheater --protocol tls www.example.com
+docker run --tty --rm balasys/dheater --protocol ssh www.example.com
 ```
 
 You can increase a load by string extra threads.
 
 ```console
 dheat --thread-num 4 --protocol tls www.example.com
-docker run --rm balasys/dheater --thread-num 4 --protocol tls www.example.com
-docker run --rm balasys/dheater --thread-num 4 --protocol ssh www.example.com
+docker run --tty --rm balasys/dheater --thread-num 4 --protocol tls www.example.com
+docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh www.example.com
 ```
 
 ## Mitigation
