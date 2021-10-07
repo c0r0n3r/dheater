@@ -271,7 +271,7 @@ def main():
             threads.append(enforcer)
             enforcer.start()
 
-        client = threads[0]._get_client()
+        client = threads[0]._get_client()  # pylint: disable=protected-access
         print(os.linesep.join([
             '',
             '### Summary',
