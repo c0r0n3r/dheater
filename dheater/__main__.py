@@ -32,7 +32,7 @@ from cryptolyzer.common.dhparam import (
     get_dh_ephemeral_key_forged,
     int_to_bytes,
 )
-from cryptolyzer.common.exception import SecurityError
+from cryptolyzer.common.exception import SecurityError, NetworkError
 import cryptolyzer.tls.dhparams
 import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
@@ -252,10 +252,21 @@ def main():
     try:
         pre_check_result = None
         for _ in range(args.thread_mum):
-            if args.protocol == 'tls':
-                enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
-            elif args.protocol == 'ssh':
-                enforcer = DHEnforcerThreadSSH(args.uri, args.timeout, pre_check_result)
+            try:
+                if args.protocol == 'tls':
+                    enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
+                elif args.protocol == 'ssh':
+                    enforcer = DHEnforcerThreadSSH(args.uri, args.timeout, pre_check_result)
+            except NetworkError as e:
+                if pre_check_result is None:
+                    print(
+                        f'Network error oocuerd while checking whether Diffie-Hellman ephemeral (DHE) key exchange '
+                        f'is supported by the server; uri="{args.uri}", error="{e}"'
+                    )
+                    return
+
+                raise e from e
+
             pre_check_result = enforcer.pre_check_result
             threads.append(enforcer)
             enforcer.start()
