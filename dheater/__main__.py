@@ -33,7 +33,7 @@ from cryptolyzer.common.dhparam import (
     int_to_bytes,
 )
 from cryptolyzer.common.exception import SecurityError, NetworkError
-import cryptolyzer.tls.dhparams
+from cryptolyzer.tls.dhparams import AnalyzerResultDHParams
 import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
@@ -59,14 +59,17 @@ class DHEnforcerThreadStats(threading.Thread):
 class DHEnforcerThreadBase(threading.Thread):
     uri = attr.ib(validator=attr.validators.instance_of(urllib3.util.url.Url))
     timeout = attr.ib(validator=attr.validators.instance_of(int))
-    pre_check_result = attr.ib(
-        default=None, validator=attr.validators.optional(attr.validators.instance_of(object))
-    )
+    pre_check_result = attr.ib(default=None)
     message_bytes = attr.ib(init=False, default=bytearray(), validator=attr.validators.instance_of(bytearray))
     stop = attr.ib(init=False, default=False, validator=attr.validators.instance_of(bool))
     stats = attr.ib(
         init=False, default=DHEnforcerThreadStats(), validator=attr.validators.instance_of(DHEnforcerThreadStats)
     )
+
+    @pre_check_result.validator
+    def pre_check_result_validator(self, attribute, value):  # pylint: disable=no-self-use,unused-argument
+        if value is not None and not isinstance(value, self._get_pre_check_type()):
+            raise ValueError()
 
     @abc.abstractmethod
     def _get_client(self):
@@ -78,6 +81,11 @@ class DHEnforcerThreadBase(threading.Thread):
 
     @abc.abstractmethod
     def _send_packets(self, client):
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def _get_pre_check_type(cls):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -110,13 +118,24 @@ class DHEnforcerThreadBase(threading.Thread):
         self.stats.time_interval = end_time - start_time
 
 
+@attr.s
+class DHEPreCheckResultSSH():  # pylint: disable=too-few-public-methods
+    dhparams_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.dhparams.AnalyzerResultDHParams))
+
+
 class DHEnforcerThreadSSH(DHEnforcerThreadBase):
+    @classmethod
+    def _get_pre_check_type(cls):
+        return DHEPreCheckResultSSH
+
     @abc.abstractmethod
     def _pre_check(self):
         analyzer = cryptolyzer.ssh.dhparams.AnalyzerDHParams()
-        self.pre_check_result = analyzer.analyze(self._get_client())
-        if self.pre_check_result.key_exchange is None and self.pre_check_result.group_exchange is None:
+        dhparams_result = analyzer.analyze(self._get_client())
+        if dhparams_result.key_exchange is None and dhparams_result.group_exchange is None:
             raise NotImplementedError()
+
+        self.pre_check_result = DHEPreCheckResultSSH(dhparams_result)
 
     def _get_client(self):
         if self.uri.scheme is None:
@@ -127,17 +146,18 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
 
     def _get_algorithm_with_greatest_key_size(self):
+        dhparams_result = self.pre_check_result.dhparams_result
         algorithm_with_greatest_key_size = None
-        if self.pre_check_result.key_exchange:
+        if dhparams_result.key_exchange:
             algorithm_with_greatest_key_size = sorted(
-                self.pre_check_result.key_exchange.kex_algorithms,
+                dhparams_result.key_exchange.kex_algorithms,
                 key=lambda algorithm: algorithm.value.key_size,
                 reverse=True
             )[0]
-        if (self.pre_check_result.group_exchange and
+        if (dhparams_result.group_exchange and
             (algorithm_with_greatest_key_size is None or
-                self.pre_check_result.group_exchange.key_sizes[-1] > algorithm_with_greatest_key_size.value.key_size)):
-            algorithm_with_greatest_key_size = self.pre_check_result.group_exchange.gex_algorithms[0]
+                dhparams_result.group_exchange.key_sizes[-1] > algorithm_with_greatest_key_size.value.key_size)):
+            algorithm_with_greatest_key_size = dhparams_result.group_exchange.gex_algorithms[0]
 
         return algorithm_with_greatest_key_size
 
@@ -159,7 +179,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
             key_size = key_exchange_algorithm_with_greatest_key_size.value.key_size
         else:
-            key_size = self.pre_check_result.group_exchange.key_sizes[-1]
+            key_size = self.pre_check_result.dhparams_result.group_exchange.key_sizes[-1]
 
         well_known_dh_param_with_matching_key_size = [
             well_known_dh_param
@@ -195,7 +215,16 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         return sent_byte_count, received_byte_count
 
 
+@attr.s
+class DHEPreCheckResultTLS():  # pylint: disable=too-few-public-methods
+    pass
+
+
 class DHEnforcerThreadTLS(DHEnforcerThreadBase):
+    @classmethod
+    def _get_pre_check_type(cls):
+        return DHEPreCheckResultTLS
+
     def _pre_check(self):
         analyzer = cryptolyzer.tls.versions.AnalyzerVersions()
         analyzer_result_versions = analyzer.analyze(self._get_client(), None)
@@ -204,6 +233,8 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         self.pre_check_result = analyzer.analyze(self._get_client(), min(analyzer_result_versions.versions))
         if not self.pre_check_result.dhparams:
             raise NotImplementedError()
+
+        self.pre_check_result = DHEPreCheckResultTLS()
 
     def _get_client(self):
         if self.uri.scheme is None:
