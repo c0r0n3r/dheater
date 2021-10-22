@@ -26,7 +26,7 @@ docker run --tty --rm balasys/dheater --protocol tls ecc256.badssl.com
 docker run --tty --rm balasys/dheater --protocol ssh ecc256.badssl.com
 ```
 
-You can increase a load by string extra threads.
+You can increase load by string extra threads.
 
 ```console
 dheat --thread-num 4 --protocol tls ecc256.badssl.com
@@ -42,11 +42,11 @@ docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badss
 
 #### Apache
 
-There is no necessary filters.
+There are no relevant filters.
 
-1. `apache-ssl.conf` in `fail2ban` directory should be copied `filter.d` directory under the fail2ban configuration
+1. `apache-ssl.conf` in `fail2ban` directory should be copied to the `filter.d` directory under the fail2ban configuration
     directory
-1. the followings should be added to `jail.local` file in fail2ban configuration directory
+1. the followings should be added to the `jail.local` file in the fail2ban configuration directory
 
 ```ini
 [apache-ssl]
@@ -58,7 +58,7 @@ maxretry = 1
 
 ##### Postfix
 
-There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+There is a relevant filter, but it is applied only in ddos mode. The followings should be added to `jail.local`.
 
 ```ini
 [postfix]
@@ -67,18 +67,18 @@ mode = ddos
 
 ##### Dovecot
 
-There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+There is a relevant filter, but it is applied only in ddos mode. The followings should be added to `jail.local`.
 
 ```ini
 [dovecot]
 mode = aggressive
 ```
 
-or a specific filter can be used without changing the mode of the dovecot filter.
+or a specific filter can be used without changing the mode of dovecot.
 
-1. `dovecot-ssl.conf` in `fail2ban` directory should be copied `filter.d` directory under the fail2ban configuration
+1. `dovecot-ssl.conf` in `fail2ban` directory should be copied to the `filter.d` directory under the fail2ban configuration
     directory
-1. the followings should be added to `jail.local` file in fail2ban configuration directory
+1. the followings should be added to `jail.local` in tge fail2ban configuration directory
 
 ```ini
 [dovecot-ssl]
@@ -93,7 +93,7 @@ maxretry = 1
 
 ##### OpenSSH
 
-There is a necessary filters, but it is applied only in ddos mode. The followings should be added to `jail.local`.
+There is a relevant filter, but it is applied only in ddos mode. The followings should be added to `jail.local`.
 
 ```ini
 [sshd]
