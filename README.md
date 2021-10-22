@@ -36,11 +36,41 @@ docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badss
 
 ## Mitigation
 
+### Configuration
+
+Diffie-Hellman (DHE) key exchange should be disabled.
+
+#### TLS
+
+##### Apache
+
+```
+SSLCipherSuite ...:!kDHE
+```
+
+##### NGINX
+
+```
+ssl_ciphers ...:!kDHE;
+```
+
+##### Others
+
+See [moz://a SSL Configuration Generator](https://ssl-config.mozilla.org/) for configuration syntax.
+
+### SSH
+
+##### OpenSSH
+
+```
+KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512
+```
+
 ### Fail2Ban
 
 #### TLS
 
-#### Apache
+##### Apache
 
 There are no relevant filters.
 
