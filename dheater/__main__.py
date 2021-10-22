@@ -128,14 +128,14 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
     def _get_algorithm_with_greatest_key_size(self):
         algorithm_with_greatest_key_size = None
-        if self.pre_check_result.key_exchange.kex_algorithms:
+        if self.pre_check_result.key_exchange:
             algorithm_with_greatest_key_size = sorted(
                 self.pre_check_result.key_exchange.kex_algorithms,
                 key=lambda algorithm: algorithm.value.key_size,
                 reverse=True
             )[0]
-        if (algorithm_with_greatest_key_size is None or
-            (self.pre_check_result.group_exchange.key_sizes and
+        if (self.pre_check_result.group_exchange and
+            (algorithm_with_greatest_key_size is None or
                 self.pre_check_result.group_exchange.key_sizes[-1] > algorithm_with_greatest_key_size.value.key_size)):
             algorithm_with_greatest_key_size = self.pre_check_result.group_exchange.gex_algorithms[0]
 
