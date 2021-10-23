@@ -22,7 +22,6 @@ from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
 from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
 from cryptoparser.ssh.subprotocol import (
     SshProtocolMessage,
-    SshKexAlgorithmVector,
     SshDHGroupExchangeInit,
     SshDHGroupExchangeRequest,
     SshDHKeyExchangeInit,
@@ -41,10 +40,12 @@ from cryptolyzer.tls.client import (
     TlsHandshakeClientHelloKeyExchangeDHE,
 )
 import cryptolyzer.ssh.dhparams
+import cryptolyzer.ssh.ciphers
 from cryptolyzer.ssh.client import (
     L7ClientSsh,
     SshKeyExchangeInitAnyAlgorithm,
 )
+from cryptolyzer.ssh.dhparams import AnalyzerResultDHParams
 
 
 @attr.s(eq=False)
@@ -121,6 +122,7 @@ class DHEnforcerThreadBase(threading.Thread):
 
 @attr.s
 class DHEPreCheckResultSSH():  # pylint: disable=too-few-public-methods
+    ciphers_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.ciphers.AnalyzerResultCiphers))
     dhparams_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.dhparams.AnalyzerResultDHParams))
 
 
@@ -131,12 +133,15 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
     @abc.abstractmethod
     def _pre_check(self):
+        analyzer = cryptolyzer.ssh.dhparams.AnalyzerCiphers()
+        ciphers_result = analyzer.analyze(self._get_client())
+
         analyzer = cryptolyzer.ssh.dhparams.AnalyzerDHParams()
         dhparams_result = analyzer.analyze(self._get_client())
         if dhparams_result.key_exchange is None and dhparams_result.group_exchange is None:
             raise NotImplementedError()
 
-        self.pre_check_result = DHEPreCheckResultSSH(dhparams_result)
+        self.pre_check_result = DHEPreCheckResultSSH(ciphers_result, dhparams_result)
 
     def _get_client(self):
         if self.uri.scheme is None:
@@ -162,19 +167,42 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
         return algorithm_with_greatest_key_size
 
+    @classmethod
+    def _get_shortest_algorithm(cls, algorithms):
+        return min(algorithms, key=lambda algorithm: len(algorithm.value.code))
+
     def _prepare_packets(self):
         message_bytes = bytearray()
         protocol_message = SshProtocolMessage(
             protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
             software_version='DH-generator',
         )
-        key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm()
+        key_exchange_algorithm_with_greatest_key_size = self._get_algorithm_with_greatest_key_size()
+        ciphers_result = self.pre_check_result.ciphers_result
+        key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm(
+            kex_algorithms=[key_exchange_algorithm_with_greatest_key_size, ],
+            host_key_algorithms=[self._get_shortest_algorithm(ciphers_result.host_key_algorithms), ],
+            encryption_algorithms_client_to_server=[
+                self._get_shortest_algorithm(ciphers_result.encryption_algorithms_client_to_server),
+            ],
+            encryption_algorithms_server_to_client=[
+                self._get_shortest_algorithm(ciphers_result.encryption_algorithms_server_to_client),
+            ],
+            mac_algorithms_client_to_server=[
+                self._get_shortest_algorithm(ciphers_result.mac_algorithms_client_to_server),
+            ],
+            mac_algorithms_server_to_client=[
+                self._get_shortest_algorithm(ciphers_result.mac_algorithms_server_to_client),
+            ],
+            compression_algorithms_client_to_server=[
+                self._get_shortest_algorithm(ciphers_result.compression_algorithms_client_to_server),
+            ],
+            compression_algorithms_server_to_client=[
+                self._get_shortest_algorithm(ciphers_result.compression_algorithms_server_to_client),
+            ],
+        )
         message_bytes += protocol_message.compose()
 
-        key_exchange_algorithm_with_greatest_key_size = self._get_algorithm_with_greatest_key_size()
-        key_exchange_init_message.kex_algorithms = SshKexAlgorithmVector(
-            [key_exchange_algorithm_with_greatest_key_size, ]
-        )
         message_bytes += SshRecordInit(key_exchange_init_message).compose()
 
         if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
