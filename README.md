@@ -54,6 +54,17 @@ SSLCipherSuite ...:!kDHE
 ssl_ciphers ...:!kDHE;
 ```
 
+##### Postfix
+
+
+1. Diffie-Hellman key exchange algorithms can be removed by setting the [tls_medium_cipherlist](http://www.postfix.org/postconf.5.html#tls_medium_cipherlist) configuration option.
+
+    `tls_medium_cipherlist ...:!kDHE`
+
+1. Maximal number of new TLS sessions that a remote SMTP client is allowed to negotiate can be controlled by configuration option [smtpd_client_new_tls_session_rate_limit](http://www.postfix.org/postconf.5.html#smtpd_client_new_tls_session_rate_limit) configuration option.
+
+    `smtpd_client_new_tls_session_rate_limit 100`
+
 ##### Others
 
 See [moz://a SSL Configuration Generator](https://ssl-config.mozilla.org/) for configuration syntax.
@@ -62,9 +73,12 @@ See [moz://a SSL Configuration Generator](https://ssl-config.mozilla.org/) for c
 
 ##### OpenSSH
 
-```
-KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512
-```
+1. Diffie-Hellman key exchange algorithms can be removed by setting the [KexAlgorithms](https://man.openbsd.org/sshd_config#KexAlgorithms) configuration option.
+
+    `KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512`
+1. Maximum number of concurrent unauthenticated connections can be controlled by configuration option [MaxStartups](https://man.openbsd.org/sshd_config#MaxStartups) configuration option.
+
+    `MaxStartups 10:30:100`
 
 ### Fail2Ban
 
