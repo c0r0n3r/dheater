@@ -78,13 +78,13 @@ There are no relevant filters.
     directory
 1. the followings should be added to the `jail.local` file in the fail2ban configuration directory
 
-```ini
-[apache-ssl]
+    ```ini
+    [apache-ssl]
 
-port    = https
-logpath = %(apache_error_log)s
-maxretry = 1
-```
+    port    = https
+    logpath = %(apache_error_log)s
+    maxretry = 1
+    ```
 
 ##### Postfix
 
@@ -110,14 +110,14 @@ or a specific filter can be used without changing the mode of dovecot.
     directory
 1. the followings should be added to `jail.local` in tge fail2ban configuration directory
 
-```ini
-[dovecot-ssl]
+    ```ini
+    [dovecot-ssl]
 
-port    = pop3,pop3s,imap,imaps,submission,465,sieve
-logpath = %(dovecot_log)s
-backend = %(dovecot_backend)s
-maxretry = 1
-```
+    port    = pop3,pop3s,imap,imaps,submission,465,sieve
+    logpath = %(dovecot_log)s
+    backend = %(dovecot_backend)s
+    maxretry = 1
+    ```
 
 #### SSH
 
