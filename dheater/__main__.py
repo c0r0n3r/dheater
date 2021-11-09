@@ -221,7 +221,11 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         return client_hello_bytes
 
     def _send_packets(self, client):
-        return client.send(self.message_bytes), 0
+        sent_byte_count = client.send(self.message_bytes)
+
+        time.sleep(0.1)
+
+        return sent_byte_count, 0
 
 
 class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
