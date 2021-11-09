@@ -299,6 +299,7 @@ def main():
     except KeyboardInterrupt:
         for thread in threads:
             thread.stop = True
+        for thread in threads:
             thread.join()
 
         if not threads or not all(map(lambda thread: thread.stats is not None, threads)):
