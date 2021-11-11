@@ -38,7 +38,9 @@ docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badss
 
 ### Configuration
 
-Diffie-Hellman (DHE) key exchange should be disabled.
+Diffie-Hellman (DHE) key exchange should be disabled if no other mitigation mechanism can be used and either 
+elliptic-curve variant of Diffie-Hellman (ECDHE) or RSA key exchange is supported by the clients. The fact that RSA key
+exchange is not forward secret should be considered.
 
 #### TLS
 
