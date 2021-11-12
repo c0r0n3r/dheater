@@ -308,7 +308,7 @@ class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
 def main():
     parser = argparse.ArgumentParser(description='Diffie-Hellman ephemeral key exchnage enforcer')
     parser.add_argument('--timeout', dest='timeout', default=5, help='socket timeout in seconds')
-    parser.add_argument('--thread-num', dest='thread_mum', default=1, type=int, help='number of threads to run')
+    parser.add_argument('--thread-num', dest='thread_num', default=1, type=int, help='number of threads to run')
     parser.add_argument(
         '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
     )
@@ -319,7 +319,7 @@ def main():
 
     try:
         pre_check_result = None
-        for _ in range(args.thread_mum):
+        for _ in range(args.thread_num):
             try:
                 if args.protocol == 'tls':
                     enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
@@ -350,7 +350,7 @@ def main():
             '    * IP: {}',
             '    * Port: {}',
         ]).format(
-            args.thread_mum,
+            args.thread_num,
             client.get_scheme(),
             client.address,
             client.ip,
