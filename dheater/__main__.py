@@ -15,6 +15,7 @@ import urllib3
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.ciphersuite import TlsCipherSuite
+from cryptoparser.tls.extension import TlsExtensionType, TlsExtensionsClient
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.subprotocol import TlsHandshakeType, TlsCipherSuiteVector
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
@@ -280,6 +281,11 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         protocol_version = TlsProtocolVersionFinal(TlsVersion.TLS1_2)
         client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
         client_hello.cipher_suites = TlsCipherSuiteVector([self.pre_check_result.cipher_suite, ])
+        client_hello.extensions = TlsExtensionsClient([
+            extension
+            for extension in client_hello.extensions
+            if extension.extension_type != TlsExtensionType.SIGNATURE_ALGORITHMS
+        ])
         client_hello_bytes = TlsRecord(client_hello.compose()).compose()
 
         return client_hello_bytes
