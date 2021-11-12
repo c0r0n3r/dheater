@@ -383,21 +383,22 @@ def main():
             '### Statistics',
             '',
             '* Requests',
-            '    * Num: {}',
-            '    * Speed: {:.2f} req/s',
-            '    * Failed ratio: {:.2f} %',
-            '    * Succeeded ratio: {:.2f} %',
+            '    * Total request num: {}',
+            '    * Total speed: {:.2f} req/s',
+            '    * Average failed ratio: {:.2f} %',
+            '    * Average succeeded ratio: {:.2f} %',
             '* Bandwith',
-            '    * Upload: {:.2f} KB/s',
-            '    * Download: {:.2f} KB/s',
+            '    * Total upload: {:.2f} KB/s',
+            '    * Total download: {:.2f} KB/s',
         ])
         output = output_template.format(
             sum([
                 thread.stats.succeeded_request_num + thread.stats.failed_request_num
                 for thread in threads
             ]),
-            (sum([thread.stats.succeeded_request_num + thread.stats.failed_request_num for thread in threads]) /
-                sum([thread.stats.time_interval for thread in threads])),
+            (sum([
+                (thread.stats.succeeded_request_num + thread.stats.failed_request_num) / thread.stats.time_interval for thread in threads
+            ])),
             sum([
                 thread.stats.failed_request_num / (thread.stats.succeeded_request_num + thread.stats.failed_request_num)
                 for thread in threads
@@ -410,9 +411,9 @@ def main():
                 if thread.stats.succeeded_request_num or thread.stats.failed_request_num
             ]) * 100.0 / len(threads),
             (sum([thread.stats.sent_byte_count for thread in threads]) /
-                sum([thread.stats.time_interval for thread in threads])) / 1000.0,
+                (sum([thread.stats.time_interval for thread in threads]) / args.thread_num)) / 1000.0,
             (sum([thread.stats.received_byte_count for thread in threads]) /
-                sum([thread.stats.time_interval for thread in threads])) / 1000.0,
+                (sum([thread.stats.time_interval for thread in threads]) / args.thread_num)) / 1000.0,
         )
         print(output)
 
