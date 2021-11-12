@@ -42,7 +42,7 @@ setup(
     maintainer_email=__setup__.__maintainer_email__,
     license=__setup__.__license__,
     license_files=['LICENSE.txt', ],
-    keywords='dhe tls',
+    keywords='dhe denial-of-service tls ssh',
     url=__setup__.__url__,
     entry_points={
         'console_scripts': ['dheat = dheater.__main__:main']
