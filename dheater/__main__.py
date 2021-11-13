@@ -12,12 +12,13 @@ import abc
 import attr
 import urllib3
 
+from cryptoparser.common.algorithm import Authentication
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
+from cryptoparser.tls.algorithm import TlsSignatureAndHashAlgorithm
 from cryptoparser.tls.ciphersuite import TlsCipherSuite
-from cryptoparser.tls.extension import TlsExtensionType, TlsExtensionsClient
 from cryptoparser.tls.record import TlsRecord
-from cryptoparser.tls.subprotocol import TlsHandshakeType, TlsCipherSuiteVector
+from cryptoparser.tls.subprotocol import TlsHandshakeType
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
 
 from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
@@ -39,6 +40,7 @@ import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
     TlsHandshakeClientHelloKeyExchangeDHE,
+    TlsHandshakeClientHelloSpecalization,
 )
 import cryptolyzer.ssh.dhparams
 import cryptolyzer.ssh.ciphers
@@ -279,13 +281,26 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
 
     def _prepare_packets(self):
         protocol_version = TlsProtocolVersionFinal(TlsVersion.TLS1_2)
-        client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
-        client_hello.cipher_suites = TlsCipherSuiteVector([self.pre_check_result.cipher_suite, ])
-        client_hello.extensions = TlsExtensionsClient([
-            extension
-            for extension in client_hello.extensions
-            if extension.extension_type != TlsExtensionType.SIGNATURE_ALGORITHMS
-        ])
+        cipher_suite = self.pre_check_result.cipher_suite
+        if cipher_suite.value.authentication == Authentication.RSA:
+            signature_algorithms = [
+                TlsSignatureAndHashAlgorithm.RSA_SHA256,
+                TlsSignatureAndHashAlgorithm.RSA_SHA1,
+            ]
+        elif cipher_suite.value.authentication == Authentication.ECDSA:
+            signature_algorithms = [
+                TlsSignatureAndHashAlgorithm.ECDSA_SHA256,
+                TlsSignatureAndHashAlgorithm.ECDSA_SHA1,
+            ]
+
+        client_hello = TlsHandshakeClientHelloSpecalization(
+            hostname=self.uri.host,
+            protocol_versions=[protocol_version, ],
+            cipher_suites=[cipher_suite, ],
+            named_curves=[],
+            signature_algorithms=signature_algorithms,
+            extensions=[],
+        )
         client_hello_bytes = TlsRecord(client_hello.compose()).compose()
 
         return client_hello_bytes
