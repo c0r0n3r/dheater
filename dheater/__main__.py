@@ -31,9 +31,11 @@ from cryptoparser.ssh.subprotocol import (
 from cryptoparser.ssh.version import SshProtocolVersion, SshVersion
 
 from cryptolyzer.common.dhparam import (
+    DHPublicKey,
     WellKnownDHParams,
     get_dh_ephemeral_key_forged,
     int_to_bytes,
+    parse_tls_dh_params
 )
 from cryptolyzer.common.exception import SecurityError, NetworkError
 import cryptolyzer.tls.versions
@@ -49,6 +51,19 @@ from cryptolyzer.ssh.client import (
     SshKeyExchangeInitAnyAlgorithm,
 )
 from cryptolyzer.ssh.dhparams import AnalyzerResultDHParams
+
+
+@attr.s
+class DHEPreCheckResultBase():
+    @property
+    @abc.abstractmethod
+    def key_size(self):
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
+    def algorithm_name(self):
+        raise NotImplementedError()
 
 
 @attr.s(eq=False)
@@ -124,9 +139,39 @@ class DHEnforcerThreadBase(threading.Thread):
 
 
 @attr.s
-class DHEPreCheckResultSSH():  # pylint: disable=too-few-public-methods
+class DHEPreCheckResultSSH(DHEPreCheckResultBase):  # pylint: disable=too-few-public-methods
     ciphers_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.ciphers.AnalyzerResultCiphers))
     dhparams_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.dhparams.AnalyzerResultDHParams))
+
+    def get_greatest_key_size_and_algorithm(self):
+        dhparams_result = self.dhparams_result
+        algorithm_with_greatest_key_size = None
+        if dhparams_result.key_exchange:
+            algorithm_with_greatest_key_size = sorted(
+                dhparams_result.key_exchange.kex_algorithms,
+                key=lambda algorithm: algorithm.value.key_size,
+                reverse=True
+            )[0]
+            greatest_key_size = algorithm_with_greatest_key_size.value.key_size
+        if (dhparams_result.group_exchange and
+            (algorithm_with_greatest_key_size is None or
+                dhparams_result.group_exchange.key_sizes[-1] > greatest_key_size)):
+            algorithm_with_greatest_key_size = dhparams_result.group_exchange.gex_algorithms[0]
+            greatest_key_size = dhparams_result.group_exchange.key_sizes[-1]
+
+        return greatest_key_size, algorithm_with_greatest_key_size
+
+    @property
+    def key_size(self):
+        greatest_key_size, _ = self.get_greatest_key_size_and_algorithm()
+
+        return greatest_key_size
+
+    @property
+    def algorithm_name(self):
+        _, algorithm_with_greatest_key_size = self.get_greatest_key_size_and_algorithm()
+
+        return algorithm_with_greatest_key_size.value.code
 
 
 class DHEnforcerThreadSSH(DHEnforcerThreadBase):
@@ -154,22 +199,6 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
         return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
 
-    def _get_algorithm_with_greatest_key_size(self):
-        dhparams_result = self.pre_check_result.dhparams_result
-        algorithm_with_greatest_key_size = None
-        if dhparams_result.key_exchange:
-            algorithm_with_greatest_key_size = sorted(
-                dhparams_result.key_exchange.kex_algorithms,
-                key=lambda algorithm: algorithm.value.key_size,
-                reverse=True
-            )[0]
-        if (dhparams_result.group_exchange and
-            (algorithm_with_greatest_key_size is None or
-                dhparams_result.group_exchange.key_sizes[-1] > algorithm_with_greatest_key_size.value.key_size)):
-            algorithm_with_greatest_key_size = dhparams_result.group_exchange.gex_algorithms[0]
-
-        return algorithm_with_greatest_key_size
-
     @classmethod
     def _get_shortest_algorithm(cls, algorithms):
         return min(algorithms, key=lambda algorithm: len(algorithm.value.code))
@@ -180,7 +209,8 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
             protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
             software_version='DH-generator',
         )
-        key_exchange_algorithm_with_greatest_key_size = self._get_algorithm_with_greatest_key_size()
+        key_size, key_exchange_algorithm_with_greatest_key_size = \
+            self.pre_check_result.get_greatest_key_size_and_algorithm()
         ciphers_result = self.pre_check_result.ciphers_result
         key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm(
             kex_algorithms=[key_exchange_algorithm_with_greatest_key_size, ],
@@ -207,11 +237,6 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         message_bytes += protocol_message.compose()
 
         message_bytes += SshRecordInit(key_exchange_init_message).compose()
-
-        if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
-            key_size = key_exchange_algorithm_with_greatest_key_size.value.key_size
-        else:
-            key_size = self.pre_check_result.dhparams_result.group_exchange.key_sizes[-1]
 
         well_known_dh_param_with_matching_key_size = [
             well_known_dh_param
@@ -248,8 +273,17 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
 
 @attr.s
-class DHEPreCheckResultTLS():  # pylint: disable=too-few-public-methods
+class DHEPreCheckResultTLS(DHEPreCheckResultBase):  # pylint: disable=too-few-public-methods
+    dh_public_key = attr.ib(validator=attr.validators.instance_of(DHPublicKey))
     cipher_suite = attr.ib(validator=attr.validators.instance_of(TlsCipherSuite))
+
+    @property
+    def key_size(self):
+        return self.dh_public_key.key_size
+
+    @property
+    def algorithm_name(self):
+        return self.cipher_suite.name
 
 
 class DHEnforcerThreadTLS(DHEnforcerThreadBase):
@@ -264,12 +298,15 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         protocol_version = min(analyzer_result_versions.versions)
         client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
         server_messages = self._get_client().do_tls_handshake(
-            client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_HELLO
+            client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_KEY_EXCHANGE
         )
         if TlsHandshakeType.SERVER_HELLO not in server_messages:
             raise NotImplementedError()
 
-        self.pre_check_result = DHEPreCheckResultTLS(server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite)
+        self.pre_check_result = DHEPreCheckResultTLS(
+            parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes),
+            server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite
+        )
 
     def _get_client(self):
         if self.uri.scheme is None:
@@ -370,12 +407,16 @@ def main():
             '    * Address: {}',
             '    * IP: {}',
             '    * Port: {}',
+            '    * Key size: {}',
+            '    * Algorithm: {}',
         ]).format(
             args.thread_num,
             client.get_scheme(),
             client.address,
             client.ip,
             client.port,
+            pre_check_result.key_size,
+            pre_check_result.algorithm_name,
         ))
 
         while True:
