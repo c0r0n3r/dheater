@@ -175,6 +175,8 @@ class DHEPreCheckResultSSH(DHEPreCheckResultBase):  # pylint: disable=too-few-pu
 
 
 class DHEnforcerThreadSSH(DHEnforcerThreadBase):
+    group_exchange = attr.ib(init=False, default=False, validator=attr.validators.instance_of(bool))
+
     @classmethod
     def _get_pre_check_type(cls):
         return DHEPreCheckResultSSH
@@ -252,6 +254,8 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
             dh_key_exchange_init_message = SshDHKeyExchangeInit(dh_ephemeral_public_key_bytes)
             message_bytes += SshRecordKexDH(dh_key_exchange_init_message).compose()
         else:
+            self.group_exchange = True
+
             dh_group_exchange_request_message = SshDHGroupExchangeRequest(
                 gex_min=key_size, gex_max=key_size, gex_number=key_size
             )
@@ -262,12 +266,30 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
         return message_bytes
 
+    @classmethod
+    def _receive_and_flush_record(cls, client):
+        received_byte_count = client.l4_transfer.receive(4)
+        received_byte_count += client.l4_transfer.receive(struct.unpack('!I', client.l4_transfer.buffer)[0])
+        client.l4_transfer.flush_buffer()
+
+        return received_byte_count
+
     def _send_packets(self, client):
         sent_byte_count = client.send(self.message_bytes)
+
+        # Receive protocol version exchange
         received_byte_count = client.l4_transfer.receive_line()
         client.l4_transfer.flush_buffer()
+
+        # Receive key exchange init message
+        received_byte_count += self._receive_and_flush_record(client)
+
+        if self.group_exchange:
+            # Wait for DH group exchange group message
+            received_byte_count += self._receive_and_flush_record(client)
+
+        # Wait for DH group/key exchange reply by receiving record length
         received_byte_count += client.l4_transfer.receive(4)
-        received_byte_count += client.l4_transfer.receive(struct.unpack('!I', client.l4_transfer.buffer)[0])
 
         return sent_byte_count, received_byte_count
 
