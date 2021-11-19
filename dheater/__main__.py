@@ -454,47 +454,6 @@ def main():
         for thread in threads:
             thread.join()
 
-        if not threads or not all(map(lambda thread: thread.stats is not None, threads)):
-            return
-        output_template = os.linesep.join([
-            '',
-            '### Statistics',
-            '',
-            '* Requests',
-            '    * Total request num: {}',
-            '    * Total speed: {:.2f} req/s',
-            '    * Average failed ratio: {:.2f} %',
-            '    * Average succeeded ratio: {:.2f} %',
-            '* Bandwith',
-            '    * Total upload: {:.2f} KB/s',
-            '    * Total download: {:.2f} KB/s',
-        ])
-        output = output_template.format(
-            sum([
-                thread.stats.succeeded_request_num + thread.stats.failed_request_num
-                for thread in threads
-            ]),
-            (sum([
-                (thread.stats.succeeded_request_num + thread.stats.failed_request_num) / thread.stats.time_interval for thread in threads
-            ])),
-            sum([
-                thread.stats.failed_request_num / (thread.stats.succeeded_request_num + thread.stats.failed_request_num)
-                for thread in threads
-                if thread.stats.succeeded_request_num or thread.stats.failed_request_num
-            ]) * 100.0 / len(threads),
-            sum([
-                thread.stats.succeeded_request_num /
-                (thread.stats.succeeded_request_num + thread.stats.failed_request_num)
-                for thread in threads
-                if thread.stats.succeeded_request_num or thread.stats.failed_request_num
-            ]) * 100.0 / len(threads),
-            (sum([thread.stats.sent_byte_count for thread in threads]) /
-                (sum([thread.stats.time_interval for thread in threads]) / args.thread_num)) / 1000.0,
-            (sum([thread.stats.received_byte_count for thread in threads]) /
-                (sum([thread.stats.time_interval for thread in threads]) / args.thread_num)) / 1000.0,
-        )
-        print(output)
-
 
 if __name__ == '__main__':
     main()
