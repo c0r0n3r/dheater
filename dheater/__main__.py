@@ -50,7 +50,6 @@ from cryptolyzer.ssh.client import (
     L7ClientSsh,
     SshKeyExchangeInitAnyAlgorithm,
 )
-from cryptolyzer.ssh.dhparams import AnalyzerResultDHParams
 
 
 @attr.s
