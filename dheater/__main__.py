@@ -44,6 +44,7 @@ from cryptolyzer.tls.client import (
     TlsHandshakeClientHelloKeyExchangeDHE,
     TlsHandshakeClientHelloSpecalization,
 )
+from cryptolyzer.tls.exception import TlsAlert
 import cryptolyzer.ssh.dhparams
 import cryptolyzer.ssh.ciphers
 from cryptolyzer.ssh.client import (
@@ -318,11 +319,15 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
 
         protocol_version = min(analyzer_result_versions.versions)
         client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
-        server_messages = self._get_client().do_tls_handshake(
-            client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_KEY_EXCHANGE
-        )
-        if TlsHandshakeType.SERVER_HELLO not in server_messages:
-            raise NotImplementedError()
+        try:
+            server_messages = self._get_client().do_tls_handshake(
+                client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_KEY_EXCHANGE
+            )
+        except (TlsAlert, NotEnoughData) as e:
+            raise NotImplementedError() from e
+        else:
+            if TlsHandshakeType.SERVER_HELLO not in server_messages:
+                raise NotImplementedError()
 
         self.pre_check_result = DHEPreCheckResultTLS(
             parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes),
