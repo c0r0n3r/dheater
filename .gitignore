@@ -10,9 +10,11 @@
 .idea
 .mypy_cache
 
+/__main__.build/
 /*.egg-info
 /.eggs
 /.tox
+/dheater.lock
 /Pipfile
 /Pipfile.lock
 /build
