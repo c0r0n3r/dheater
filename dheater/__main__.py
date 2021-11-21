@@ -52,6 +52,8 @@ from cryptolyzer.ssh.client import (
     SshKeyExchangeInitAnyAlgorithm,
 )
 
+from dheater import __setup__
+
 
 @attr.s
 class DHEPreCheckResultBase():
@@ -428,6 +430,7 @@ def main():
             '',
             '### Summary',
             '',
+            '    * Version: {}',
             '    * Thread num: {}',
             '    * Protocol: {}',
             '    * Address: {}',
@@ -436,6 +439,7 @@ def main():
             '    * Key size: {}',
             '    * Algorithm: {}',
         ]).format(
+            __setup__.__version__,
             args.thread_num,
             client.get_scheme(),
             client.address,
