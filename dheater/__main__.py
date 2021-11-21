@@ -427,13 +427,18 @@ def main():
 
         client = threads[0]._get_client()  # pylint: disable=protected-access
         print(os.linesep.join([
-            '',
-            '### Summary',
+            '### Software',
             '',
             '    * Version: {}',
+            '',
+            '### Arguments',
+            '',
             '    * Thread num: {}',
             '    * Protocol: {}',
             '    * Address: {}',
+            '',
+            '### Service',
+            '',
             '    * IP: {}',
             '    * Port: {}',
             '    * Key size: {}',
