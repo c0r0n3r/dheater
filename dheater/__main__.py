@@ -211,7 +211,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         message_bytes = bytearray()
         protocol_message = SshProtocolMessage(
             protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
-            software_version='DH-generator',
+            software_version=f'{__setup__.__title__}_{__setup__.__version__}',
         )
         key_size, key_exchange_algorithm_with_greatest_key_size = \
             self.pre_check_result.get_greatest_key_size_and_algorithm()
