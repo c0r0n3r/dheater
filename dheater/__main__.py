@@ -269,7 +269,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         return message_bytes
 
     @classmethod
-    def _receive_and_flush_record(cls, client):
+    def _skip_record(cls, client):
         received_byte_count = client.l4_transfer.receive(4)
         received_byte_count += client.l4_transfer.receive(struct.unpack('!I', client.l4_transfer.buffer)[0])
         client.l4_transfer.flush_buffer()
@@ -284,11 +284,11 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         client.l4_transfer.flush_buffer()
 
         # Receive key exchange init message
-        received_byte_count += self._receive_and_flush_record(client)
+        received_byte_count += self._skip_record(client)
 
         if self.group_exchange:
             # Wait for DH group exchange group message
-            received_byte_count += self._receive_and_flush_record(client)
+            received_byte_count += self._skip_record(client)
 
         # Wait for DH group/key exchange reply by receiving record length
         received_byte_count += client.l4_transfer.receive(4)
