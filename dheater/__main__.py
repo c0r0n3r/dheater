@@ -19,7 +19,7 @@ from cryptoparser.tls.algorithm import TlsSignatureAndHashAlgorithm
 from cryptoparser.tls.ciphersuite import TlsCipherSuite
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.subprotocol import TlsHandshakeType
-from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
+from cryptoparser.tls.version import TlsProtocolVersionFinal
 
 from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
 from cryptoparser.ssh.subprotocol import (
@@ -299,6 +299,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 @attr.s
 class DHEPreCheckResultTLS(DHEPreCheckResultBase):  # pylint: disable=too-few-public-methods
     dh_public_key = attr.ib(validator=attr.validators.instance_of(DHPublicKey))
+    protocol_version = attr.ib(validator=attr.validators.instance_of(TlsProtocolVersionFinal))
     cipher_suite = attr.ib(validator=attr.validators.instance_of(TlsCipherSuite))
 
     @property
@@ -332,8 +333,9 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                 raise NotImplementedError()
 
         self.pre_check_result = DHEPreCheckResultTLS(
-            parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes),
-            server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite
+            dh_public_key=parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes),
+            protocol_version=protocol_version,
+            cipher_suite=server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite,
         )
 
     def _get_client(self):
@@ -345,7 +347,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         return L7ClientTlsBase.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
 
     def _prepare_packets(self):
-        protocol_version = TlsProtocolVersionFinal(TlsVersion.TLS1_2)
+        protocol_version = self.pre_check_result.protocol_version
         cipher_suite = self.pre_check_result.cipher_suite
         if cipher_suite.value.authentication == Authentication.RSA:
             signature_algorithms = [
