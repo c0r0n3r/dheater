@@ -20,7 +20,7 @@ from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.algorithm import TlsSignatureAndHashAlgorithm
 from cryptoparser.tls.ciphersuite import TlsCipherSuite
-from cryptoparser.tls.extension import TlsNamedCurve, TlsExtensionEllipticCurves, TlsExtensionType
+from cryptoparser.tls.extension import TlsNamedCurve, TlsExtensionEllipticCurves
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.subprotocol import TlsHandshakeType
 from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
@@ -348,50 +348,38 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         protocol_version = max(analyzer_result_versions.versions)
         dh_public_key = None
         if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
-            dhe_named_groups = sorted(
+            named_curves = sorted(
                 TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,  # pylint: disable=protected-access
                 key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
             )
-            for dhe_named_group in dhe_named_groups:
+            for named_curve in named_curves:
                 client_hello = TlsHandshakeClientHelloKeyExchangeDHE(
-                    protocol_version, self.uri.host, dhe_named_groups=[dhe_named_group, ]
+                    protocol_version, self.uri.host, named_curves=[named_curve, ]
                 )
                 try:
-                    server_messages = self._get_client(timeout=timeout).do_tls_handshake(
+                    server_messages = self._get_client().do_tls_handshake(
                         client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_HELLO
                     )
                 except (TlsAlert, NotEnoughData):
                     break
                 else:
-                    dh_public_key = dhe_named_group
+                    dh_public_key = named_curve
                     break
 
         if dh_public_key is None:
-            try:
-                protocol_version = max(filter(
-                    lambda protocol_version: protocol_version <= TlsProtocolVersionFinal(TlsVersion.TLS1_2),
-                    analyzer_result_versions.versions
-                ))
-            except ValueError as e:
-                raise NotImplementedError() from e
-
-            last_handshake_message_type = TlsHandshakeType.SERVER_KEY_EXCHANGE
+            protocol_version = min(analyzer_result_versions.versions)
             client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
             try:
-                server_messages = self._get_client(timeout=timeout).do_tls_handshake(
-                    client_hello, last_handshake_message_type=last_handshake_message_type
+                server_messages = self._get_client().do_tls_handshake(
+                    client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_KEY_EXCHANGE
                 )
             except (TlsAlert, NotEnoughData) as e:
                 raise NotImplementedError() from e
             else:
-                if last_handshake_message_type not in server_messages:
+                if TlsHandshakeType.SERVER_KEY_EXCHANGE not in server_messages:
                     raise NotImplementedError()
 
-            if is_tls_1_3:
-                server_hello = server_messages[TlsHandshakeType.SERVER_HELLO]
-                dh_public_key = server_hello.extensions.get_item_by_type(TlsExtensionType.KEY_SHARE).key_share_entry.group
-            else:
-                dh_public_key = cryptolyzer.tls.dhparams.AnalyzerDHParams._get_public_key_tls_1_x(server_messages)
+                dh_public_key = parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes)
 
         # Last received message is server key exchange so only its first byte should be counted
         receivable_byte_count = sum([
