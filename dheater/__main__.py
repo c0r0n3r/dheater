@@ -80,7 +80,7 @@ class DHEnforcerThreadStats(threading.Thread):
 @attr.s(eq=False)
 class DHEnforcerThreadBase(threading.Thread):
     uri = attr.ib(validator=attr.validators.instance_of(urllib3.util.url.Url))
-    timeout = attr.ib(validator=attr.validators.instance_of(int))
+    timeout = attr.ib(converter=float, validator=attr.validators.instance_of(float))
     pre_check_result = attr.ib(default=None)
     message_bytes = attr.ib(init=False, default=bytearray(), validator=attr.validators.instance_of(bytearray))
     stop = attr.ib(init=False, default=False, validator=attr.validators.instance_of(bool))
@@ -395,7 +395,7 @@ class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
 
 def main():
     parser = argparse.ArgumentParser(description='Diffie-Hellman ephemeral key exchnage enforcer')
-    parser.add_argument('--timeout', dest='timeout', default=5, help='socket timeout in seconds')
+    parser.add_argument('--timeout', dest='timeout', default=5, type=float, help='socket timeout in seconds')
     parser.add_argument('--thread-num', dest='thread_num', default=1, type=int, help='number of threads to run')
     parser.add_argument(
         '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
