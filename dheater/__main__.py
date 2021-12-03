@@ -72,7 +72,7 @@ class DHEPreCheckResultBase():
 
 
 @attr.s(eq=False)
-class DHEnforcerThreadStats(threading.Thread):
+class DHEnforcerThreadStats():
     failed_request_num = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
     succeeded_request_num = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
     sent_byte_count = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
