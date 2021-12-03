@@ -8,6 +8,9 @@ import socket
 import struct
 import threading
 
+from collections import deque
+from operator import methodcaller
+
 import abc
 import attr
 import urllib3
@@ -83,10 +86,10 @@ class DHEnforcerThreadBase(threading.Thread):
     timeout = attr.ib(converter=float, validator=attr.validators.instance_of(float))
     pre_check_result = attr.ib(default=None)
     message_bytes = attr.ib(init=False, default=bytearray(), validator=attr.validators.instance_of(bytearray))
-    stop = attr.ib(init=False, default=False, validator=attr.validators.instance_of(bool))
     stats = attr.ib(
         init=False, default=DHEnforcerThreadStats(), validator=attr.validators.instance_of(DHEnforcerThreadStats)
     )
+    _stop_event = attr.ib(init=False, default=None)
 
     @pre_check_result.validator
     def pre_check_result_validator(self, attribute, value):  # pylint: disable=no-self-use,unused-argument
@@ -119,12 +122,20 @@ class DHEnforcerThreadBase(threading.Thread):
             self._pre_check()
 
         threading.Thread.__init__(self)
+        self._stop_event = threading.Event()
 
         self.message_bytes = self._prepare_packets()
 
+    def stop(self):
+        self._stop_event.set()
+
+    @property
+    def stopped(self):
+        return self._stop_event.is_set()
+
     def run(self):
         start_time = time.time()
-        while not self.stop:
+        while not self.stopped:
             try:
                 client = self._get_client()
                 client.init_connection()
@@ -425,7 +436,8 @@ def main():
 
             pre_check_result = enforcer.pre_check_result
             threads.append(enforcer)
-            enforcer.start()
+
+        deque(map(methodcaller('start'), threads))
 
         client = threads[0]._get_client()  # pylint: disable=protected-access
         print(os.linesep.join([
@@ -464,10 +476,8 @@ def main():
             f'uri="{args.uri}", protocol="{args.protocol}"'
         )
     except KeyboardInterrupt:
-        for thread in threads:
-            thread.stop = True
-        for thread in threads:
-            thread.join()
+        deque(map(methodcaller('stop'), threads))
+        deque(map(methodcaller('join'), threads))
 
 
 if __name__ == '__main__':
