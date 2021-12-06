@@ -72,7 +72,7 @@ class DHEPreCheckResultBase():
 
 
 @attr.s(eq=False)
-class DHEnforcerThreadStats():
+class DHEnforcerThreadStats():  # pylint: disable=too-few-public-methods
     failed_request_num = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
     succeeded_request_num = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
     sent_byte_count = attr.ib(init=False, default=0, validator=attr.validators.instance_of(int))
@@ -92,7 +92,7 @@ class DHEnforcerThreadBase(threading.Thread):
     _stop_event = attr.ib(init=False, default=None)
 
     @pre_check_result.validator
-    def pre_check_result_validator(self, attribute, value):  # pylint: disable=no-self-use,unused-argument
+    def pre_check_result_validator(self, attribute, value):  # pylint: disable=unused-argument
         if value is not None and not isinstance(value, self._get_pre_check_type()):
             raise ValueError()
 
