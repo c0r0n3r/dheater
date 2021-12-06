@@ -312,6 +312,7 @@ class DHEPreCheckResultTLS(DHEPreCheckResultBase):  # pylint: disable=too-few-pu
     dh_public_key = attr.ib(validator=attr.validators.instance_of(DHPublicKey))
     protocol_version = attr.ib(validator=attr.validators.instance_of(TlsProtocolVersionFinal))
     cipher_suite = attr.ib(validator=attr.validators.instance_of(TlsCipherSuite))
+    receivable_byte_count = attr.ib(validator=attr.validators.instance_of(int))
 
     @property
     def key_size(self):
@@ -343,10 +344,17 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
             if TlsHandshakeType.SERVER_HELLO not in server_messages:
                 raise NotImplementedError()
 
+        # Last received message is server key exchange so only its first byte should be counted
+        receivable_byte_count = sum([
+            len(server_message.compose())
+            for handshake_type, server_message in server_messages.items()
+            if handshake_type != TlsHandshakeType.SERVER_KEY_EXCHANGE
+        ]) + 1
         self.pre_check_result = DHEPreCheckResultTLS(
             dh_public_key=parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes),
             protocol_version=protocol_version,
             cipher_suite=server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite,
+            receivable_byte_count=receivable_byte_count,
         )
 
     def _get_client(self):
@@ -386,9 +394,23 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
     def _send_packets(self, client):
         sent_byte_count = client.send(self.message_bytes)
 
-        time.sleep(0.1)
+        received_byte_count = 0
+        while received_byte_count <= self.pre_check_result.receivable_byte_count:
+            # Receive TLS record header bytes
+            if len(client.l4_transfer.buffer) < TlsRecord.HEADER_SIZE:
+                client.l4_transfer.receive(TlsRecord.HEADER_SIZE - len(client.l4_transfer.buffer))
 
-        return sent_byte_count, 0
+            # Recceive remaining part of the TLS record
+            record_length = struct.unpack('!H', client.l4_transfer.buffer[3:5])[0]
+            client.l4_transfer.flush_buffer(TlsRecord.HEADER_SIZE)
+            if len(client.l4_transfer.buffer) < record_length:
+                client.l4_transfer.receive(record_length - len(client.l4_transfer.buffer))
+            client.l4_transfer.flush_buffer(record_length)
+
+            # Add record length only to the received byte count as TLS messages may come in different number of records
+            received_byte_count += record_length
+
+        return sent_byte_count, received_byte_count
 
 
 class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
