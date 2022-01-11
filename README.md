@@ -79,9 +79,16 @@ See [moz://a SSL Configuration Generator](https://ssl-config.mozilla.org/) for c
 1. Diffie-Hellman key exchange algorithms can be removed by setting the [KexAlgorithms](https://man.openbsd.org/sshd_config#KexAlgorithms) configuration option.
 
     `KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512`
-1. Maximum number of concurrent unauthenticated connections can be controlled by configuration option [MaxStartups](https://man.openbsd.org/sshd_config#MaxStartups) configuration option.
+1. Maximum number of concurrent unauthenticated connections can be controlled by some configuration options
+    *  [MaxStartups](https://man.openbsd.org/sshd_config#MaxStartups) (globally)
 
-    `MaxStartups 10:30:100`
+        `MaxStartups 10:30:100`
+    * [PerSourceMaxStartups](https://man.openbsd.org/sshd_config#PerSourceMaxStartups) (per source IP subnetworks)
+
+        `PerSourceMaxStartups 1`
+    * [PerSourceNetBlockSize](https://man.openbsd.org/sshd_config#PerSourceNetBlockSize) (size of the subnetworks grouped together)
+
+        `PerSourceNetBlockSize 32:128`
 
 ### Fail2Ban
 
