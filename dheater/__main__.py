@@ -156,6 +156,7 @@ class DHEnforcerThreadBase(threading.Thread):
 
 @attr.s
 class DHEPreCheckResultSSH(DHEPreCheckResultBase):  # pylint: disable=too-few-public-methods
+    protocol_version = attr.ib(validator=attr.validators.instance_of(SshProtocolVersion))
     ciphers_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.ciphers.AnalyzerResultCiphers))
     dhparams_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.dhparams.AnalyzerResultDHParams))
 
@@ -208,7 +209,8 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         if dhparams_result.key_exchange is None and dhparams_result.group_exchange is None:
             raise NotImplementedError()
 
-        self.pre_check_result = DHEPreCheckResultSSH(ciphers_result, dhparams_result)
+        protocol_version = SshProtocolVersion(SshVersion.SSH2, 0)
+        self.pre_check_result = DHEPreCheckResultSSH(protocol_version, ciphers_result, dhparams_result)
 
     def _get_client(self, timeout=None):
         if self.uri.scheme is None:
@@ -346,13 +348,13 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         protocol_version = max(analyzer_result_versions.versions)
         dh_public_key = None
         if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
-            named_curves = sorted(
+            dhe_named_groups = sorted(
                 TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,  # pylint: disable=protected-access
                 key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
             )
-            for named_curve in named_curves:
+            for dhe_named_group in dhe_named_groups:
                 client_hello = TlsHandshakeClientHelloKeyExchangeDHE(
-                    protocol_version, self.uri.host, named_curves=[named_curve, ]
+                    protocol_version, self.uri.host, dhe_named_groups=[dhe_named_group, ]
                 )
                 try:
                     server_messages = self._get_client(timeout=timeout).do_tls_handshake(
@@ -361,21 +363,19 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                 except (TlsAlert, NotEnoughData):
                     break
                 else:
-                    dh_public_key = named_curve
+                    dh_public_key = dhe_named_group
                     break
 
         if dh_public_key is None:
-            protocol_version = min(analyzer_result_versions.versions)
-            is_tls_1_3 = protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2)
-            if is_tls_1_3:
-                named_curves = sorted(
-                    TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,
-                    key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
-                )
-                last_handshake_message_type = TlsHandshakeType.SERVER_HELLO
-            else:
-                last_handshake_message_type = TlsHandshakeType.SERVER_KEY_EXCHANGE
-                named_curves = None
+            try:
+                protocol_version = max(filter(
+                    lambda protocol_version: protocol_version <= TlsProtocolVersionFinal(TlsVersion.TLS1_2),
+                    analyzer_result_versions.versions
+                ))
+            except ValueError as e:
+                raise NotImplementedError() from e
+
+            last_handshake_message_type = TlsHandshakeType.SERVER_KEY_EXCHANGE
             client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
             try:
                 server_messages = self._get_client(timeout=timeout).do_tls_handshake(
@@ -548,7 +548,7 @@ def main():
         ]).format(
             __setup__.__version__,
             args.thread_num,
-            client.get_scheme(),
+            pre_check_result.protocol_version,
             client.address,
             client.ip,
             client.port,
