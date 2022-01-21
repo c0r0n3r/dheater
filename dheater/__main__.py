@@ -41,6 +41,7 @@ from cryptolyzer.common.dhparam import (
     parse_tls_dh_params
 )
 from cryptolyzer.common.exception import SecurityError, NetworkError
+from cryptolyzer.common.transfer import L4ClientTCP
 import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
@@ -97,7 +98,7 @@ class DHEnforcerThreadBase(threading.Thread):
             raise ValueError()
 
     @abc.abstractmethod
-    def _get_client(self):
+    def _get_client(self, timeout=None):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -196,21 +197,25 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
     @abc.abstractmethod
     def _pre_check(self):
+        timeout = L4ClientTCP.get_default_timeout()
         analyzer = cryptolyzer.ssh.dhparams.AnalyzerCiphers()
-        ciphers_result = analyzer.analyze(self._get_client())
+        ciphers_result = analyzer.analyze(self._get_client(timeout))
 
         analyzer = cryptolyzer.ssh.dhparams.AnalyzerDHParams()
-        dhparams_result = analyzer.analyze(self._get_client())
+        dhparams_result = analyzer.analyze(self._get_client(timeout))
         if dhparams_result.key_exchange is None and dhparams_result.group_exchange is None:
             raise NotImplementedError()
 
         self.pre_check_result = DHEPreCheckResultSSH(ciphers_result, dhparams_result)
 
-    def _get_client(self):
+    def _get_client(self, timeout=None):
         if self.uri.scheme is None:
             scheme = 'ssh'
         else:
             scheme = self.uri.scheme
+
+        if timeout is None:
+            timeout = self.timeout
 
         return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
 
@@ -329,8 +334,9 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         return DHEPreCheckResultTLS
 
     def _pre_check(self):
+        timeout = L4ClientTCP.get_default_timeout()
         analyzer = cryptolyzer.tls.versions.AnalyzerVersions()
-        analyzer_result_versions = analyzer.analyze(self._get_client(), None)
+        analyzer_result_versions = analyzer.analyze(self._get_client(timeout=timeout), None)
 
         protocol_version = min(analyzer_result_versions.versions)
         client_hello = TlsHandshakeClientHelloKeyExchangeDHE(protocol_version, self.uri.host)
@@ -357,13 +363,16 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
             receivable_byte_count=receivable_byte_count,
         )
 
-    def _get_client(self):
+    def _get_client(self, timeout=None):
         if self.uri.scheme is None:
             scheme = 'tls'
         else:
             scheme = self.uri.scheme
 
-        return L7ClientTlsBase.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
+        if timeout is None:
+            timeout = self.timeout
+
+        return L7ClientTlsBase.from_scheme(scheme, self.uri.host, self.uri.port, timeout)
 
     def _prepare_packets(self):
         protocol_version = self.pre_check_result.protocol_version
@@ -428,7 +437,10 @@ class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
 
 def main():
     parser = argparse.ArgumentParser(description='Diffie-Hellman ephemeral key exchnage enforcer')
-    parser.add_argument('--timeout', dest='timeout', default=5, type=float, help='socket timeout in seconds')
+    parser.add_argument(
+        '--timeout', dest='timeout', default=L4ClientTCP.get_default_timeout(), type=float,
+        help='socket timeout in seconds (default: %(default)ss)'
+    )
     parser.add_argument('--thread-num', dest='thread_num', default=1, type=int, help='number of threads to run')
     parser.add_argument(
         '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
