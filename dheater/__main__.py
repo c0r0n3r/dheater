@@ -485,7 +485,10 @@ def main():
         '--timeout', dest='timeout', default=L4ClientTCP.get_default_timeout(), type=float,
         help='socket timeout in seconds (default: %(default)ss)'
     )
-    parser.add_argument('--thread-num', dest='thread_num', default=1, type=int, help='number of threads to run (default: %(default)s)')
+    parser.add_argument(
+        '--thread-num', dest='thread_num', default=1, type=int,
+        help='number of threads to run (default: %(default)s)'
+    )
     parser.add_argument(
         '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
     )
