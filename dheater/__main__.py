@@ -418,11 +418,13 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                 TlsSignatureAndHashAlgorithm.ECDSA_SHA256,
                 TlsSignatureAndHashAlgorithm.ECDSA_SHA1,
             ]
+
+        client_hello_class = TlsHandshakeClientHelloSpecalization
         if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
             signature_algorithms = None
-            extensions = TlsHandshakeClientHelloSpecalization._get_tls1_3_extensions(  # pylint: disable=protected-access
-                [protocol_version, ], [self.pre_check_result.dh_public_key, ], signature_algorithms
-            )
+            extensions = client_hello_class._get_tls1_3_extensions(  # pylint: disable=protected-access
+                    [protocol_version, ], [self.pre_check_result.dh_public_key, ], signature_algorithms
+                )
             extensions.append(TlsExtensionEllipticCurves([self.pre_check_result.dh_public_key, ]))
             client_hello = TlsHandshakeClientHelloKeyExchangeDHE(
                 protocol_version=protocol_version,
@@ -430,7 +432,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                 named_curves=[self.pre_check_result.dh_public_key, ]
             )
         else:
-            client_hello = TlsHandshakeClientHelloSpecalization(
+            client_hello = client_hello_class(
                 protocol_versions=[protocol_version, ],
                 hostname=self.uri.host,
                 cipher_suites=[cipher_suite, ],
