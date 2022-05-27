@@ -63,6 +63,10 @@ from dheater import __setup__
 
 @attr.s
 class DHEPreCheckResultBase():
+    enforcable_key_size = attr.ib(
+        converter=attr.converters.optional(int), validator=attr.validators.optional(attr.validators.instance_of(int))
+    )
+
     @property
     @abc.abstractmethod
     def key_size(self):
@@ -87,6 +91,9 @@ class DHEnforcerThreadStats():  # pylint: disable=too-few-public-methods
 class DHEnforcerThreadBase(threading.Thread):
     uri = attr.ib(validator=attr.validators.instance_of(urllib3.util.url.Url))
     timeout = attr.ib(converter=float, validator=attr.validators.instance_of(float))
+    enforcable_key_size = attr.ib(
+        converter=attr.converters.optional(int), validator=attr.validators.optional(attr.validators.instance_of(int))
+    )
     pre_check_result = attr.ib(default=None)
     message_bytes = attr.ib(init=False, default=bytearray(), validator=attr.validators.instance_of(bytearray))
     stats = attr.ib(
@@ -160,33 +167,51 @@ class DHEPreCheckResultSSH(DHEPreCheckResultBase):  # pylint: disable=too-few-pu
     ciphers_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.ciphers.AnalyzerResultCiphers))
     dhparams_result = attr.ib(validator=attr.validators.instance_of(cryptolyzer.ssh.dhparams.AnalyzerResultDHParams))
 
-    def get_greatest_key_size_and_algorithm(self):
+    def get_key_size_and_algorithm(self):
         dhparams_result = self.dhparams_result
-        algorithm_with_greatest_key_size = None
+        algorithm = None
+        key_size = None
         if dhparams_result.key_exchange:
-            algorithm_with_greatest_key_size = sorted(
-                dhparams_result.key_exchange.kex_algorithms,
-                key=lambda algorithm: algorithm.value.key_size,
-                reverse=True
-            )[0]
-            greatest_key_size = algorithm_with_greatest_key_size.value.key_size
-        if (dhparams_result.group_exchange and
-            (algorithm_with_greatest_key_size is None or
-                dhparams_result.group_exchange.key_sizes[-1] > greatest_key_size)):
-            algorithm_with_greatest_key_size = dhparams_result.group_exchange.gex_algorithms[0]
-            greatest_key_size = dhparams_result.group_exchange.key_sizes[-1]
+            kex_algorithms = dhparams_result.key_exchange.kex_algorithms
+            if self.enforcable_key_size is not None:
+                kex_algorithms = [
+                    algorithm
+                    for algorithm in dhparams_result.key_exchange.kex_algorithms
+                    if self.enforcable_key_size == algorithm.value.key_size
+                ]
 
-        return greatest_key_size, algorithm_with_greatest_key_size
+            if kex_algorithms:
+                algorithm = sorted(
+                    kex_algorithms,
+                    key=lambda algorithm: algorithm.value.key_size,
+                    reverse=True
+                )[0]
+                key_size = algorithm.value.key_size
+
+        if dhparams_result.group_exchange:
+            if self.enforcable_key_size is None:
+                if key_size is None or dhparams_result.group_exchange.key_sizes[-1] > key_size:
+                    algorithm = dhparams_result.group_exchange.gex_algorithms[0]
+                    key_size = dhparams_result.group_exchange.key_sizes[-1]
+            else:
+                if key_size is None or self.enforcable_key_size in dhparams_result.group_exchange.key_sizes:
+                    algorithm = dhparams_result.group_exchange.gex_algorithms[0]
+                    key_size = self.enforcable_key_size
+
+        if key_size is None:
+            raise NotImplementedError()
+
+        return key_size, algorithm
 
     @property
     def key_size(self):
-        greatest_key_size, _ = self.get_greatest_key_size_and_algorithm()
+        key_size, _ = self.get_key_size_and_algorithm()
 
-        return greatest_key_size
+        return key_size
 
     @property
     def algorithm_name(self):
-        _, algorithm_with_greatest_key_size = self.get_greatest_key_size_and_algorithm()
+        _, algorithm_with_greatest_key_size = self.get_key_size_and_algorithm()
 
         return algorithm_with_greatest_key_size.value.code
 
@@ -210,7 +235,9 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
             raise NotImplementedError()
 
         protocol_version = SshProtocolVersion(SshVersion.SSH2, 0)
-        self.pre_check_result = DHEPreCheckResultSSH(protocol_version, ciphers_result, dhparams_result)
+        self.pre_check_result = DHEPreCheckResultSSH(
+            self.enforcable_key_size, protocol_version, ciphers_result, dhparams_result
+        )
 
     def _get_client(self, timeout=None):
         if self.uri.scheme is None:
@@ -233,11 +260,10 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
             protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
             software_version=SshSoftwareVersionUnparsed(f'{__setup__.__title__}_{__setup__.__version__}'),
         )
-        key_size, key_exchange_algorithm_with_greatest_key_size = \
-            self.pre_check_result.get_greatest_key_size_and_algorithm()
+        key_size, kex_algorithm = self.pre_check_result.get_key_size_and_algorithm()
         ciphers_result = self.pre_check_result.ciphers_result
         key_exchange_init_message = SshKeyExchangeInitAnyAlgorithm(
-            kex_algorithms=[key_exchange_algorithm_with_greatest_key_size, ],
+            kex_algorithms=[kex_algorithm, ],
             host_key_algorithms=[self._get_shortest_algorithm(ciphers_result.host_key_algorithms), ],
             encryption_algorithms_client_to_server=[
                 self._get_shortest_algorithm(ciphers_result.encryption_algorithms_client_to_server),
@@ -272,7 +298,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         )
         dh_ephemeral_public_key_bytes = int_to_bytes(dh_ephemeral_public_key, key_size).lstrip(b'\x00')
 
-        if key_exchange_algorithm_with_greatest_key_size.value.key_size is not None:
+        if kex_algorithm.value.key_size is not None:
             dh_key_exchange_init_message = SshDHKeyExchangeInit(dh_ephemeral_public_key_bytes)
             message_bytes += SshRecordKexDH(dh_key_exchange_init_message).compose()
         else:
@@ -348,10 +374,15 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         protocol_version = max(analyzer_result_versions.versions)
         dh_public_key = None
         if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
-            named_curves = sorted(
+            named_curves = list(sorted(
                 TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,  # pylint: disable=protected-access
                 key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
-            )
+            ))
+            if self.enforcable_key_size is not None:
+                named_curves = list(filter(
+                    lambda named_curve: named_curve.value.named_group.value.size == self.enforcable_key_size,
+                    named_curves
+                ))
             for named_curve in named_curves:
                 client_hello = TlsHandshakeClientHelloKeyExchangeDHE(
                     protocol_version, self.uri.host, named_curves=[named_curve, ]
@@ -360,8 +391,8 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                     server_messages = self._get_client().do_tls_handshake(
                         client_hello, last_handshake_message_type=TlsHandshakeType.SERVER_HELLO
                     )
-                except (TlsAlert, NotEnoughData):
-                    break
+                except (TlsAlert, NotEnoughData, NetworkError):
+                    continue
                 else:
                     dh_public_key = named_curve
                     break
@@ -380,6 +411,9 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                     raise NotImplementedError()
 
                 dh_public_key = parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes)
+                if (dh_public_key is not None and self.enforcable_key_size is not None and
+                        self.enforcable_key_size != dh_public_key.key_size):
+                    raise NotImplementedError()
 
         # Last received message is server key exchange so only its first byte should be counted
         receivable_byte_count = sum([
@@ -388,6 +422,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
             if handshake_type != TlsHandshakeType.SERVER_KEY_EXCHANGE
         ]) + 1
         self.pre_check_result = DHEPreCheckResultTLS(
+            enforcable_key_size=self.enforcable_key_size,
             dh_public_key=dh_public_key,
             protocol_version=protocol_version,
             cipher_suite=server_messages[TlsHandshakeType.SERVER_HELLO].cipher_suite,
@@ -490,6 +525,10 @@ def main():
         help='number of threads to run (default: %(default)s)'
     )
     parser.add_argument(
+        '--key-size', dest='key_size', default=None, type=int,
+        help='key size to enforce (default: %(default)s)'
+    )
+    parser.add_argument(
         '--protocol', dest='protocol', required=True, choices=['tls', 'ssh', ], help='name of the protocol'
     )
     parser.add_argument('uri', metavar='uri', action=ParseURI, help='uri of the service')
@@ -502,9 +541,9 @@ def main():
         for _ in range(args.thread_num):
             try:
                 if args.protocol == 'tls':
-                    enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, pre_check_result)
+                    enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, args.key_size, pre_check_result)
                 elif args.protocol == 'ssh':
-                    enforcer = DHEnforcerThreadSSH(args.uri, args.timeout, pre_check_result)
+                    enforcer = DHEnforcerThreadSSH(args.uri, args.timeout, args.key_size, pre_check_result)
             except NetworkError as e:
                 if pre_check_result is None:
                     print(
@@ -553,7 +592,7 @@ def main():
             time.sleep(0.2)
     except NotImplementedError:
         print(
-            f'Diffie-Hellman ephemeral (DHE) key exchange not supported by the server; '
+            f'Diffie-Hellman ephemeral (DHE) key exchange (with the given key size) not supported by the server; '
             f'uri="{args.uri}", protocol="{args.protocol}"'
         )
     except KeyboardInterrupt:
