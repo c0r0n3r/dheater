@@ -45,16 +45,30 @@ exchange is not forward secret should be considered.
 
 #### TLS
 
+Elliptic-curve (named group) setting is necessary only if the underlying cryptographic library supports negotiation
+Diffie-Hellman groups by implementing [RFC7919](https://www.rfc-editor.org/info/rfc7919) in TLS 1.2 or supporting the
+[Finite Field Diffie-Hellman parameter groups](https://www.rfc-editor.org/rfc/rfc8446#section-7.4.1) named groups in
+TLS 1.3.
+
+| Library | Version | FFDHE goups<br>in TLS 1.2 | FFDHE groups<br>in TLS 1.3 |
+| ------- |:-------:|:---:|:---:|
+| OpenSSL | < 3.0   | no  | no  |
+| OpenSSL | ≥ 3.0   | no  | yes |
+| GnuTLS  | ≥ 3.5.6 | yes | no  |
+| GnuTLS  | ≥ 3.6.3 | yes | yes |
+
 ##### Apache
 
 ```
 SSLCipherSuite ...:!kDHE
+SSLOpenSSLConfCmd Groups x25519:secp256r1:x448:secp521r1:secp384r1
 ```
 
 ##### NGINX
 
 ```
 ssl_ciphers ...:!kDHE;
+ssl_ecdh_curve x25519:secp256r1:x448:secp521r1:secp384r1;
 ```
 
 ##### Postfix
