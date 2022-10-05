@@ -58,6 +58,8 @@ setup(
         'dheater',
     ],
 
+    scripts = ['tools/dh_param_priv_key_size_setter.py'],
+
     test_suite='setup.test_discover',
 
     classifiers=[
