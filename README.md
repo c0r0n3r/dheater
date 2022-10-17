@@ -36,6 +36,32 @@ docker run --tty --rm balasys/dheater --thread-num 4 --protocol tls ecc256.badss
 docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
 ```
 
+## Check
+
+Without attacking a server or accessing its configuration it is still possible
+to determine whether Diffie-Hellman (DH) key exchange is enabled and if so what
+DH parameters (prime, genrator, key size) are used.  Command line tools such as
+[CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) (TLS, SSH KEX/GEX),
+[testssl.sh](https://testssl.sh) (TLS only), or
+[ssh-audit](https://github.com/jtesta/ssh-audit) (SSH KEX only) can do that work.
+
+### TLS
+
+```
+cryptolyze tls1_2 dhparams example.com
+cryptolyze tls1_3 dhparams example.com
+
+testssl.sh --fs example.com
+```
+
+### SSH
+
+```
+cryptolyze ssh2 dhparams example.com
+
+ssh-audit example.com
+```
+
 ## Mitigation
 
 ### Configuration
