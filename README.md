@@ -87,6 +87,52 @@ ssl_ecdh_curve x25519:secp256r1:x448:secp521r1:secp384r1;
 
 See [moz://a SSL Configuration Generator](https://ssl-config.mozilla.org/) for configuration syntax.
 
+##### DH parameter files
+
+If DH key exchange need to be supported recommended private key length value
+should be set to ensure the best performance of DH key exchange this option
+value should be set appropriately to achieve the best performance without a
+security risk.
+
+You can check whether you DH parameter file contains the recommended private
+key value by the following command:
+
+```
+tools/dh_param_priv_key_size_setter /path/to/dh/parameter/file.pem
+```
+
+The result looks like the following. If the original private key size is
+`None` it some cryptographic libraries use the public size for private key
+size unless the application server overrides this behaviour. This will cause
+much lower performance than small private keys would be used.
+
+```
+Original private key size: None
+Set private key size: None
+-----BEGIN DH PARAMETERS-----
+MIIBCAKCAQEA//////////+t+FRYortKmq/cViAnPTzx2LnFg84tNpWp4TZBFGQz
++8yTnc4kmz75fS/jY2MMddj2gbICrsRhetPfHtXV/WVhJDP1H18GbtCFY2VVPe0a
+87VXE15/V8k1mE8McODmi3fipona8+/och3xWKE2rec1MKzKT0g6eXq8CrGCsyT7
+YdEIqUuyyOP7uWrat2DX9GgdT0Kj3jlN9K5W7edjcrsZCwenyO4KbXCeAvzhzffi
+7MA0BM0oNC9hkXL+nOmFg/+OTxIy7vKBg8P+OxtMb61zO7X8vC7CIAXFjvGDfRaD
+ssbzSibBsu/6iGtCOGEoXJf//////////wIBAg==
+-----END DH PARAMETERS-----
+
+```
+
+To set the recommended private key size in a DH parameter file use the
+following commmand:
+
+```
+tools/dh_param_priv_key_size_setter --private-key-size KEY_SIZE /path/to/dh/parameter/file.pem
+```
+
+For appropriately private key sizes see Table 2 of
+[NIST SP 800-57 Part 1](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf).
+Alternatively you can download the well-know DH parameters where the recommended
+private key size is set according to OpenSSL default values from
+[data](https://github.com/Balasys/dheater/tree/master/data) directory.
+
 ### SSH
 
 ##### OpenSSH
