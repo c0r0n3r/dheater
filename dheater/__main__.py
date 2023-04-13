@@ -15,7 +15,8 @@ import abc
 import attr
 import urllib3
 
-from cryptoparser.common.algorithm import Authentication
+from cryptodatahub.common.algorithm import Authentication
+
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.algorithm import TlsSignatureAndHashAlgorithm
@@ -23,7 +24,7 @@ from cryptoparser.tls.ciphersuite import TlsCipherSuite
 from cryptoparser.tls.extension import TlsNamedCurve, TlsExtensionEllipticCurves
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.subprotocol import TlsHandshakeType
-from cryptoparser.tls.version import TlsProtocolVersionFinal, TlsVersion
+from cryptoparser.tls.version import TlsProtocolVersion, TlsVersion
 
 from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
 from cryptoparser.ssh.subprotocol import (
@@ -345,7 +346,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 @attr.s
 class DHEPreCheckResultTLS(DHEPreCheckResultBase):  # pylint: disable=too-few-public-methods
     dh_public_key = attr.ib(validator=attr.validators.instance_of((DHPublicKey, TlsNamedCurve)))
-    protocol_version = attr.ib(validator=attr.validators.instance_of(TlsProtocolVersionFinal))
+    protocol_version = attr.ib(validator=attr.validators.instance_of(TlsProtocolVersion))
     cipher_suite = attr.ib(validator=attr.validators.instance_of(TlsCipherSuite))
     receivable_byte_count = attr.ib(validator=attr.validators.instance_of(int))
 
@@ -373,7 +374,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
 
         protocol_version = max(analyzer_result_versions.versions)
         dh_public_key = None
-        if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
+        if protocol_version > TlsProtocolVersion(TlsVersion.TLS1_2):
             named_curves = list(sorted(
                 TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,  # pylint: disable=protected-access
                 key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
@@ -455,7 +456,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
             ]
 
         client_hello_class = TlsHandshakeClientHelloSpecalization
-        if protocol_version > TlsProtocolVersionFinal(TlsVersion.TLS1_2):
+        if protocol_version > TlsProtocolVersion(TlsVersion.TLS1_2):
             signature_algorithms = None
             extensions = client_hello_class._get_tls1_3_extensions(  # pylint: disable=protected-access
                     [protocol_version, ], [self.pre_check_result.dh_public_key, ], signature_algorithms
