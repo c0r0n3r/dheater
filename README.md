@@ -124,7 +124,7 @@ You can check whether you DH parameter file contains the recommended private
 key value by the following command:
 
 ```
-tools/dh_param_priv_key_size_setter /path/to/dh/parameter/file.pem
+dh_param_priv_key_size_setter /path/to/dh/parameter/file.pem
 ```
 
 The result looks like the following. If the original private key size is
@@ -150,7 +150,7 @@ To set the recommended private key size in a DH parameter file use the
 following commmand:
 
 ```
-tools/dh_param_priv_key_size_setter --private-key-size KEY_SIZE /path/to/dh/parameter/file.pem
+dh_param_priv_key_size_setter --private-key-size KEY_SIZE /path/to/dh/parameter/file.pem
 ```
 
 For appropriately private key sizes see Table 2 of
