@@ -177,6 +177,23 @@ private key size is set according to OpenSSL default values from
 
         `PerSourceNetBlockSize 32:128`
 
+### IPsec
+
+##### StrongSwan
+
+1. Diffie-Hellman key exchange algorithms can be removed by setting the [ike](https://linux.die.net/man/5/ipsec.conf)
+   configuration option explicitly and not using key exchange algorithms which name start with `modp`.
+
+1. Maximum number of unauthenticated connections can be controlled by some configuration options
+
+    * [cookie\_threshold](https://docs.strongswan.org/strongswan-docs/5.9/config/strongswanConf.html) (activate
+      [cookie](https://datatracker.ietf.org/doc/html/rfc5996#section-2.6) mechanism)
+
+        `cookie_threshold 10`
+    * [block\_threshold](https://docs.strongswan.org/strongswan-docs/5.9/config/strongswanConf.html) (activate block mechanism)
+
+        `block_threshold 5
+
 ### Fail2Ban
 
 #### TLS
