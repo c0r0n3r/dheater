@@ -20,20 +20,20 @@ dheat --protocol ssh ecc256.badssl.com
 ```
 
 or can be used via [Docker](https://www.docker.com/) from
-[Docker Hub](https://hub.docker.com/repository/docker/balasys/dheater)
+[Docker Hub](https://hub.docker.com/repository/docker/coroner/dheater)
 
 ```console
-docker pull balasys/dheater
-docker run --tty --rm balasys/dheater --protocol tls ecc256.badssl.com
-docker run --tty --rm balasys/dheater --protocol ssh ecc256.badssl.com
+docker pull coroner/dheater
+docker run --tty --rm coroner/dheater --protocol tls ecc256.badssl.com
+docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
 ```
 
 You can increase load by string extra threads.
 
 ```console
 dheat --thread-num 4 --protocol tls ecc256.badssl.com
-docker run --tty --rm balasys/dheater --thread-num 4 --protocol tls ecc256.badssl.com
-docker run --tty --rm balasys/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
+docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls ecc256.badssl.com
+docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
 ```
 
 ## Check
@@ -157,7 +157,7 @@ For appropriately private key sizes see Table 2 of
 [NIST SP 800-57 Part 1](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf).
 Alternatively you can download the well-know DH parameters where the recommended
 private key size is set according to OpenSSL default values from
-[data](https://github.com/Balasys/dheater/tree/master/data) directory.
+[data](https://gitlab.com/dheatattack/dheater/-/tree/master/data) directory.
 
 ### SSH
 
