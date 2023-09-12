@@ -88,14 +88,14 @@ TLS 1.3.
 
 ```
 SSLCipherSuite ...:!kDHE
-SSLOpenSSLConfCmd Groups x25519:secp256r1:x448:secp521r1:secp384r1
+SSLOpenSSLConfCmd Groups x25519:secp256r1:x448
 ```
 
 ##### NGINX
 
 ```
 ssl_ciphers ...:!kDHE;
-ssl_ecdh_curve x25519:secp256r1:x448:secp521r1:secp384r1;
+ssl_ecdh_curve x25519:secp256r1:x448;
 ```
 
 ##### Postfix
