@@ -1,0 +1,14 @@
+[run]
+
+source =
+    dheater
+    tools
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+include =
+    dheater/*
+    tools/*
+show_missing = True

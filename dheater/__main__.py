@@ -407,21 +407,21 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
                 )
             except (TlsAlert, NotEnoughData) as e:
                 raise NotImplementedError() from e
-            else:
-                if TlsHandshakeType.SERVER_KEY_EXCHANGE not in server_messages:
-                    raise NotImplementedError()
 
-                dh_public_key = parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes)
-                if (dh_public_key is not None and self.enforcable_key_size is not None and
-                        self.enforcable_key_size != dh_public_key.key_size):
-                    raise NotImplementedError()
+            if TlsHandshakeType.SERVER_KEY_EXCHANGE not in server_messages:
+                raise NotImplementedError()
+
+            dh_public_key = parse_tls_dh_params(server_messages[TlsHandshakeType.SERVER_KEY_EXCHANGE].param_bytes)
+            if (dh_public_key is not None and self.enforcable_key_size is not None and
+                    self.enforcable_key_size != dh_public_key.key_size):
+                raise NotImplementedError()
 
         # Last received message is server key exchange so only its first byte should be counted
-        receivable_byte_count = sum([
+        receivable_byte_count = sum(
             len(server_message.compose())
             for handshake_type, server_message in server_messages.items()
             if handshake_type != TlsHandshakeType.SERVER_KEY_EXCHANGE
-        ]) + 1
+        ) + 1
         self.pre_check_result = DHEPreCheckResultTLS(
             enforcable_key_size=self.enforcable_key_size,
             dh_public_key=dh_public_key,

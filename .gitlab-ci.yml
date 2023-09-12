@@ -1,0 +1,48 @@
+image: python
+
+stages:
+- test
+- deploy
+
+before_script:
+- pip install -r dev-requirements.txt
+
+pylint:
+  image: python:3.11-slim
+  stage: test
+  script: tox -e pylint
+
+pep8:
+  stage: test
+  script: tox -e pep8
+
+python311:
+  image: python:3.11-slim
+  stage: test
+  script: tox -e py311
+
+pypy3:
+  image: pypy:3-slim
+  stage: test
+  script: tox -e pypy3
+
+dockerhub:
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  variables:
+    DOCKER_NAME: coroner/${CI_PROJECT_NAME}
+  before_script:
+    - if ! [ -z ${CI_COMMIT_TAG} ] ; then DOCKER_NAME="${DOCKER_NAME}:${CI_COMMIT_TAG}" ; fi
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
+  script:
+    - docker build -t "$DOCKER_NAME" .
+    - docker push "$DOCKER_NAME"
+  only:
+    refs:
+      - branches
+      - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
+      - $CI_COMMIT_REF_NAME == "master"

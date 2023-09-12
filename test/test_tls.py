@@ -5,12 +5,15 @@ import os
 import sys
 
 import unittest
+import unittest.mock
 
 from dheater.__main__ import main
 
 
 class TestMain(unittest.TestCase):
-    _NO_DHE_SUPPORT_ERROR_PREFIX = 'Diffie-Hellman ephemeral (DHE) key exchange not supported by the server; '
+    _NO_DHE_SUPPORT_ERROR_PREFIX = (
+        'Diffie-Hellman ephemeral (DHE) key exchange (with the given key size) not supported by the server; '
+    )
 
     def _test_runtime_error(self, arguments, error_msg):
         with unittest.mock.patch.object(sys, 'stdout', new_callable=io.StringIO) as stdout, \
