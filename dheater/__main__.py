@@ -16,6 +16,7 @@ import attr
 import urllib3
 
 from cryptodatahub.common.algorithm import Authentication
+from cryptodatahub.common.parameter import DHParamWellKnown
 
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
@@ -37,7 +38,6 @@ from cryptoparser.ssh.version import SshSoftwareVersionUnparsed, SshProtocolVers
 
 from cryptolyzer.common.dhparam import (
     DHPublicKey,
-    WellKnownDHParams,
     get_dh_ephemeral_key_forged,
     int_to_bytes,
     parse_tls_dh_params
@@ -291,11 +291,11 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
 
         well_known_dh_param_with_matching_key_size = [
             well_known_dh_param
-            for well_known_dh_param in WellKnownDHParams
+            for well_known_dh_param in DHParamWellKnown
             if well_known_dh_param.value.key_size == key_size
         ][0]
         dh_ephemeral_public_key = get_dh_ephemeral_key_forged(
-            well_known_dh_param_with_matching_key_size.value.dh_param_numbers.p
+            well_known_dh_param_with_matching_key_size.value.parameter_numbers.p
         )
         dh_ephemeral_public_key_bytes = int_to_bytes(dh_ephemeral_public_key, key_size).lstrip(b'\x00')
 
