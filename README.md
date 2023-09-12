@@ -40,7 +40,7 @@ docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badss
 
 Without attacking a server or accessing its configuration it is still possible
 to determine whether Diffie-Hellman (DH) key exchange is enabled and if so what
-DH parameters (prime, genrator, key size) are used.  Command line tools such as
+DH parameters (prime, generator, key size) are used.  Command line tools such as
 [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) (TLS, SSH KEX/GEX),
 [testssl.sh](https://testssl.sh) (TLS only), or
 [ssh-audit](https://github.com/jtesta/ssh-audit) (SSH KEX only) can do that work.
