@@ -2,8 +2,8 @@
 
 D(HE)ater is an attacking tool based on CPU heating in that it forces the ephemeral variant of
 [Diffie-Hellman key exchange](https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange) (DHE) in given
-cryptography protocols (e.g. TLS, SSH). It is performed without calculating a cryptographically correct ephemeral key on
-the client-side, but with a significant amount of calculation on the server-side. Based on this,
+cryptography protocols (e.g. TLS, OpenVPN, SSH). It is performed without calculating a cryptographically correct
+ephemeral key on the client-side, but with a significant amount of calculation on the server-side. Based on this,
 a [denial-of-service (DoS) attack](https://en.wikipedia.org/wiki/Denial-of-service_attack) can be initiated,
 called [D(HE)at attack](https://dheatattack.com)
 ([CVE-2002-20001](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2002-20001)).
@@ -25,6 +25,8 @@ or can be used via [Docker](https://www.docker.com/) from
 ```shell
 docker pull coroner/dheater
 docker run --tty --rm coroner/dheater --protocol tls ecc256.badssl.com
+docker run --tty --rm coroner/dheater --protocol tls openvpn://vpn.example.com
+docker run --tty --rm coroner/dheater --protocol tls openvpntcp://vpn.example.com:443
 docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
 ```
 
@@ -33,6 +35,8 @@ You can increase load by string extra threads.
 ```shell
 dheat --thread-num 4 --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls ecc256.badssl.com
+docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls openvpn://vpn.example.com
+docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls openvpntcp://vpn.example.com:443
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
 ```
 
@@ -41,7 +45,7 @@ docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badss
 Without attacking a server or accessing its configuration it is still possible
 to determine whether Diffie-Hellman (DH) key exchange is enabled and if so what
 DH parameters (prime, generator, key size) are used.  Command line tools such as
-[CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) (TLS, SSH KEX/GEX),
+[CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) (TLS, OpenVPN, SSH KEX/GEX),
 [testssl.sh](https://testssl.sh) (TLS only), or
 [ssh-audit](https://github.com/jtesta/ssh-audit) (SSH KEX only) can do that work.
 
@@ -52,6 +56,16 @@ cryptolyze tls1_2 dhparams example.com
 cryptolyze tls1_3 dhparams example.com
 
 testssl.sh --fs example.com
+```
+
+### OpenVPN
+
+```shell
+cryptolyze tls1_2 dhparams openvpn://vpn.example.com
+cryptolyze tls1_3 dhparams openvpn://vpn.example.com
+
+cryptolyze tls1_2 dhparams openvpntcp://vpn.example.com:443
+cryptolyze tls1_3 dhparams openvpntcp://vpn.example.com:443
 ```
 
 ### SSH
@@ -192,7 +206,38 @@ private key size is set according to OpenSSL default values from
         PerSourceNetBlockSize 32:128
         ```
 
-### IPsec
+### VPN
+
+#### OpenVPN
+
+1. Diffie-Hellman key exchange algorithms can be removed in TLS versions prior to 1.2 by setting the
+   [tls-cipher](https://build.openvpn.net/man/openvpn-2.6/openvpn.8.html) configuration option.
+
+    * using OpenSSL
+
+        ```
+        tls-cipher ...:!kDHE
+        ```
+
+    * using mbed TLS any cipher suites contain DHE should be removed
+
+1. Finite field Diffie-Hellman groups can be removed in TLS version 1.3 by setting the
+   [tls-groups](https://build.openvpn.net/man/openvpn-2.6/openvpn.8.html) configuration option.
+
+    ```
+    tls-groups x25519:secp256r1:x448
+    ```
+
+1. Control channel can be authentticated and/or encrypted by setting the tls-auth, tls-crypt, tls-crypt-v2
+   [configuration options](https://build.openvpn.net/man/openvpn-2.6/openvpn.8.html).
+
+    ```
+    tls-auth file
+    tls-crypt file
+    tls-crypt-v2 file
+    ```
+
+#### IPsec
 
 ##### StrongSwan
 
