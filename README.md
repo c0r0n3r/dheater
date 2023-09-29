@@ -13,7 +13,7 @@ called [D(HE)at attack](https://dheatattack.com)
 D(HE)ater can be installed directly via [pip](https://pip.pypa.io/en/stable/) from
 [PyPi](https://pypi.org/project/dheater/)
 
-```console
+```
 pip install dheater
 dheat --protocol tls ecc256.badssl.com
 dheat --protocol ssh ecc256.badssl.com
@@ -22,7 +22,7 @@ dheat --protocol ssh ecc256.badssl.com
 or can be used via [Docker](https://www.docker.com/) from
 [Docker Hub](https://hub.docker.com/repository/docker/coroner/dheater)
 
-```console
+```
 docker pull coroner/dheater
 docker run --tty --rm coroner/dheater --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
@@ -30,7 +30,7 @@ docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
 
 You can increase load by string extra threads.
 
-```console
+```
 dheat --thread-num 4 --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
@@ -103,11 +103,15 @@ ssl_ecdh_curve x25519:secp256r1:x448;
 
 1. Diffie-Hellman key exchange algorithms can be removed by setting the [tls_medium_cipherlist](http://www.postfix.org/postconf.5.html#tls_medium_cipherlist) configuration option.
 
-    `tls_medium_cipherlist ...:!kDHE`
+    ```
+    tls_medium_cipherlist ...:!kDHE
+    ```
 
 1. Maximal number of new TLS sessions that a remote SMTP client is allowed to negotiate can be controlled by configuration option [smtpd_client_new_tls_session_rate_limit](http://www.postfix.org/postconf.5.html#smtpd_client_new_tls_session_rate_limit) configuration option.
 
-    `smtpd_client_new_tls_session_rate_limit 100`
+    ```
+    smtpd_client_new_tls_session_rate_limit 100
+    ```
 
 ##### Others
 
@@ -165,17 +169,28 @@ private key size is set according to OpenSSL default values from
 
 1. Diffie-Hellman key exchange algorithms can be removed by setting the [KexAlgorithms](https://man.openbsd.org/sshd_config#KexAlgorithms) configuration option.
 
-    `KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512`
+    ```
+    KexAlgorithms -diffie-hellman-group1-sha1,diffie-hellman-group1-sha256,diffie-hellman-group14-sha1,diffie-hellman-group14-sha256,diffie-hellman-group15-sha256,diffie-hellman-group15-sha512,diffie-hellman-group16-sha256,diffie-hellman-group16-sha512,diffie-hellman-group17-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha512
+    ```
+
 1. Maximum number of concurrent unauthenticated connections can be controlled by some configuration options
     *  [MaxStartups](https://man.openbsd.org/sshd_config#MaxStartups) (globally)
 
-        `MaxStartups 10:30:100`
+        ```
+        MaxStartups 10:30:100
+        ```
+
     * [PerSourceMaxStartups](https://man.openbsd.org/sshd_config#PerSourceMaxStartups) (per source IP subnetworks)
 
-        `PerSourceMaxStartups 1`
+        ```
+        PerSourceMaxStartups 1
+        ```
+
     * [PerSourceNetBlockSize](https://man.openbsd.org/sshd_config#PerSourceNetBlockSize) (size of the subnetworks grouped together)
 
-        `PerSourceNetBlockSize 32:128`
+        ```
+        PerSourceNetBlockSize 32:128
+        ```
 
 ### IPsec
 
@@ -189,10 +204,15 @@ private key size is set according to OpenSSL default values from
     * [cookie\_threshold](https://docs.strongswan.org/strongswan-docs/5.9/config/strongswanConf.html) (activate
       [cookie](https://datatracker.ietf.org/doc/html/rfc5996#section-2.6) mechanism)
 
-        `cookie_threshold 10`
+        ```
+        cookie_threshold 10
+        ```
+
     * [block\_threshold](https://docs.strongswan.org/strongswan-docs/5.9/config/strongswanConf.html) (activate block mechanism)
 
-        `block_threshold 5
+        ```
+        block_threshold 5
+        ```
 
 ### Fail2Ban
 
