@@ -86,14 +86,14 @@ TLS 1.3.
 
 ##### Apache
 
-```
+```apache
 SSLCipherSuite ...:!kDHE
 SSLOpenSSLConfCmd Groups x25519:secp256r1:x448
 ```
 
 ##### NGINX
 
-```
+```nginx
 ssl_ciphers ...:!kDHE;
 ssl_ecdh_curve x25519:secp256r1:x448;
 ```
