@@ -13,7 +13,7 @@ called [D(HE)at attack](https://dheatattack.com)
 D(HE)ater can be installed directly via [pip](https://pip.pypa.io/en/stable/) from
 [PyPi](https://pypi.org/project/dheater/)
 
-```
+```shell
 pip install dheater
 dheat --protocol tls ecc256.badssl.com
 dheat --protocol ssh ecc256.badssl.com
@@ -22,7 +22,7 @@ dheat --protocol ssh ecc256.badssl.com
 or can be used via [Docker](https://www.docker.com/) from
 [Docker Hub](https://hub.docker.com/repository/docker/coroner/dheater)
 
-```
+```shell
 docker pull coroner/dheater
 docker run --tty --rm coroner/dheater --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
@@ -30,7 +30,7 @@ docker run --tty --rm coroner/dheater --protocol ssh ecc256.badssl.com
 
 You can increase load by string extra threads.
 
-```
+```shell
 dheat --thread-num 4 --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol tls ecc256.badssl.com
 docker run --tty --rm coroner/dheater --thread-num 4 --protocol ssh ecc256.badssl.com
@@ -47,7 +47,7 @@ DH parameters (prime, generator, key size) are used.  Command line tools such as
 
 ### TLS
 
-```
+```shell
 cryptolyze tls1_2 dhparams example.com
 cryptolyze tls1_3 dhparams example.com
 
@@ -56,7 +56,7 @@ testssl.sh --fs example.com
 
 ### SSH
 
-```
+```shell
 cryptolyze ssh2 dhparams example.com
 
 ssh-audit example.com
@@ -127,7 +127,7 @@ security risk.
 You can check whether you DH parameter file contains the recommended private
 key value by the following command:
 
-```
+```shell
 dh_param_priv_key_size_setter /path/to/dh/parameter/file.pem
 ```
 
