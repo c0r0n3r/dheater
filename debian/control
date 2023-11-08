@@ -27,11 +27,11 @@ Depends:
 Description: D(HE)at attack proof-of-concept against TLS and SSH
  D(HE)ater is the proof-of-concept implementation of the D(HE)at attack
  (CVE-2002-20001), a low-bandwidth denial-of-service attack that saturates a
- server's CPU by enforcing Diffie-Hellman ephemeral (DHE) key exchange over
- TLS and SSH.
+ server's CPU by enforcing Diffie-Hellman ephemeral (DHE) or elliptic-curve
+ Diffie-Hellman ephemeral (ECDHE) key exchange over TLS and SSH.
  .
- It uses CryptoLyzer to detect whether a target supports DHE and to generate
- the handshakes required to perform the attack. The package installs the
+ It uses CryptoLyzer to detect whether a target supports DHE/ECDHE and to
+ generate the handshakes required to perform the attack. The package installs the
  "dheat" command-line tool and the "dh_param_priv_key_size_setter" helper.
  .
  This tool performs a real denial-of-service attack and must only be used

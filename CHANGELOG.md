@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Elliptic-curve Diffie-Hellman ephemeral (ECDHE) key exchange support, selectable with
+  `--key-exchange ECDHE`, against both TLS and SSH.
 - Debian packaging (a `debian/` directory) for building the tool as a `.deb`.
 
 ## [1.0.0] - 2026-06-13

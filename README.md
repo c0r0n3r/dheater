@@ -6,7 +6,9 @@
 [![DOI](https://zenodo.org/badge/401652275.svg)](https://doi.org/10.5281/zenodo.20681371)
 
 D(HE)ater is the proof-of-concept implementation of the D(HE)at attack ([CVE-2002-20001](
-https://nvd.nist.gov/vuln/detail/CVE-2002-20001)). For further information about the attack visit the
+https://nvd.nist.gov/vuln/detail/CVE-2002-20001)). It saturates a server's CPU by enforcing
+Diffie-Hellman ephemeral (DHE) or elliptic-curve Diffie-Hellman ephemeral (ECDHE) key exchange
+over both TLS and SSH. For further information about the attack visit the
 [project page](https://dheatattack.com/dheater) or read the [full technical paper](
 https://ieeexplore.ieee.org/document/10374117) on [IEEE Access](https://ieeeaccess.ieee.org/).
 
@@ -34,11 +36,15 @@ Optional arguments:
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `--key-exchange` | `DHE` | key exchange to enforce: `DHE` or `ECDHE` |
 | `--timeout` | `5` | socket timeout in seconds |
 | `--thread-num` | `1` | number of threads to run |
 | `--key-size` | none | key size to enforce |
 
 ```shell
+# enforce elliptic-curve (ECDHE) key exchange instead of finite-field (DHE)
+dheat --protocol tls --key-exchange ECDHE example.com:443
+
 # 16 threads, 10 second timeout
 dheat --protocol tls --thread-num 16 --timeout 10 example.com:443
 ```
@@ -51,7 +57,7 @@ site: [dheatattack.com](https://dheatattack.com/dheater).
 ## Requirements
 
 D(HE)ater requires Python 3.9 or newer and depends on [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer)
-to check DHE support and generate the necessary traffic. The dependency is installed automatically with the
+to check DHE/ECDHE support and generate the necessary traffic. The dependency is installed automatically with the
 methods described below.
 
 ## Installation
@@ -76,5 +82,5 @@ A non-comprehensive, but straightforward description and also the full license t
 
 ## Credits
 
-D(HE)ater uses [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) to check DHE support of TLS/SSH
+D(HE)ater uses [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer) to check DHE/ECDHE support of TLS/SSH
 services and also to generate the traffic necessary to perform D(HE)at attack.
