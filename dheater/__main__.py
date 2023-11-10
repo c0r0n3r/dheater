@@ -19,17 +19,21 @@ from cryptodatahub.common.algorithm import Authentication
 from cryptodatahub.common.parameter import DHParamWellKnown
 from cryptodatahub.tls.algorithm import TlsCipherSuite, TlsNamedCurve, TlsSignatureAndHashAlgorithm
 
+from cryptodatahub.tls.algorithm import TlsCipherSuite, TlsNamedCurve, TlsSignatureAndHashAlgorithm
+from cryptodatahub.tls.version import TlsVersion
+
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.extension import (
     TlsExtensionsClient,
+    TlsExtensionEllipticCurves,
     TlsExtensionKeyShareClient,
     TlsExtensionKeyShareReservedClient,
     TlsExtensionType,
 )
 from cryptoparser.tls.record import TlsRecord
 from cryptoparser.tls.subprotocol import TlsHandshakeType
-from cryptoparser.tls.version import TlsProtocolVersion, TlsVersion
+from cryptoparser.tls.version import TlsProtocolVersion
 
 from cryptoparser.ssh.record import SshRecordInit, SshRecordKexDH, SshRecordKexDHGroup
 from cryptoparser.ssh.subprotocol import (
