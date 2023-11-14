@@ -191,11 +191,11 @@ class DHEPreCheckResultSSH(DHEPreCheckResultBase):  # pylint: disable=too-few-pu
 
         if dhparams_result.group_exchange:
             if self.enforcable_key_size is None:
-                if key_size is None or dhparams_result.group_exchange.key_sizes[-1] > key_size:
+                if key_size is None or dhparams_result.group_exchange.key_sizes[-1].value > key_size:
                     algorithm = dhparams_result.group_exchange.gex_algorithms[0]
-                    key_size = dhparams_result.group_exchange.key_sizes[-1]
+                    key_size = dhparams_result.group_exchange.key_sizes[-1].value
             else:
-                if key_size is None or self.enforcable_key_size in dhparams_result.group_exchange.key_sizes:
+                if key_size is None or self.enforcable_key_size in dhparams_result.group_exchange.key_sizes.value:
                     algorithm = dhparams_result.group_exchange.gex_algorithms[0]
                     key_size = self.enforcable_key_size
 
