@@ -529,7 +529,7 @@ class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Diffie-Hellman ephemeral key exchnage enforcer')
+    parser = argparse.ArgumentParser(description='Diffie-Hellman ephemeral key exchange enforcer')
     parser.add_argument(
         '--timeout', dest='timeout', default=L4ClientTCP.get_default_timeout(), type=float,
         help='socket timeout in seconds (default: %(default)ss)'
@@ -561,7 +561,7 @@ def main():
             except NetworkError as e:
                 if pre_check_result is None:
                     print(
-                        f'Network error oocuerd while checking whether Diffie-Hellman ephemeral (DHE) key exchange '
+                        f'Network error occurred while checking whether Diffie-Hellman ephemeral (DHE) key exchange '
                         f'is supported by the server; uri="{args.uri}", error="{e}"'
                     )
                     return
