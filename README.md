@@ -2,7 +2,7 @@
 
 D(HE)ater is the proof-of-concept implementation of the D(HE)at attack ([CVE-2002-20001](
 https://nvd.nist.gov/vuln/detail/CVE-2002-20001)). For further information about the attack visit the
-[project page](https://dheatattack.gitlab.io/dheater) or read the [full technical paper](
+[project page](https://dheatattack.com/dheater) or read the [full technical paper](
 https://ieeexplore.ieee.org/document/10374117) on [IEEE Access](https://ieeeaccess.ieee.org/).
 
 ## License
