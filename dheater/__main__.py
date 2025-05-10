@@ -51,7 +51,7 @@ from cryptolyzer.common.dhparam import (
     parse_tls_dh_params
 )
 from cryptolyzer.common.exception import SecurityError, NetworkError
-from cryptolyzer.common.transfer import L4ClientTCP
+from cryptolyzer.common.transfer import L4ClientTCP, L4TransferSocketParams
 import cryptolyzer.tls.versions
 from cryptolyzer.tls.client import (
     L7ClientTlsBase,
@@ -258,7 +258,9 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         if timeout is None:
             timeout = self.timeout
 
-        return L7ClientSsh.from_scheme(scheme, self.uri.host, self.uri.port, self.timeout)
+        return L7ClientSsh.from_scheme(
+            scheme, self.uri.host, self.uri.port, L4TransferSocketParams(timeout=self.timeout)
+        )
 
     @classmethod
     def _get_shortest_algorithm(cls, algorithms):
@@ -448,7 +450,9 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         if timeout is None:
             timeout = self.timeout
 
-        return L7ClientTlsBase.from_scheme(scheme, self.uri.host, self.uri.port, timeout)
+        return L7ClientTlsBase.from_scheme(
+            scheme, self.uri.host, self.uri.port, L4TransferSocketParams(timeout=timeout)
+        )
 
     def _prepare_packets(self):
         protocol_version = self.pre_check_result.protocol_version
