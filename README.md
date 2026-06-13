@@ -42,6 +42,11 @@ Optional arguments:
 dheat --protocol tls --thread-num 16 --timeout 10 example.com:443
 ```
 
+## Mitigation
+
+Guidance on detecting and mitigating the D(HE)at attack is maintained on the official project
+site: [dheatattack.com](https://dheatattack.com/dheater).
+
 ## Requirements
 
 D(HE)ater requires Python 3.9 or newer and depends on [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer)
