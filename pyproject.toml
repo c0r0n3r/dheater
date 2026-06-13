@@ -18,6 +18,7 @@ maintainers = [
 keywords = ["dhe", "denial-of-service", "tls", "ssh"]
 requires-python = ">=3.9"
 dependencies = [
+    "asn1crypto",
     "attrs>=19.2.0",
     "cryptolyzer==1.0.0",
     "urllib3",
@@ -48,6 +49,7 @@ Issues = "https://gitlab.com/dheatattack/dheater/-/issues"
 
 [project.scripts]
 dheat = "dheater.__main__:main"
+dh_param_priv_key_size_setter = "dheater.dh_param_priv_key_size_setter:main"
 
 [project.optional-dependencies]
 test = ["unittest2", "coverage", "six"]
@@ -57,4 +59,3 @@ dev = ["tox"]
 
 [tool.setuptools]
 packages = ["dheater"]
-script-files = ["tools/dh_param_priv_key_size_setter"]
