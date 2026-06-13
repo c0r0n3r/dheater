@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-13
+
 ### Changed
 
 - Migrated packaging from `setup.py` to `pyproject.toml` (PEP 621).
 - Followed CryptoLyzer changes up to its version 1.0.0.
+- Raised the minimum supported Python version to 3.9.
 
 ## [0.4.3] - 2023-12-28
 
