@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+title: "D(HE)ater"
+abstract: >-
+  Proof-of-concept implementation of the D(HE)at attack (CVE-2002-20001), a
+  denial-of-service attack that heats up a server CPU by enforcing
+  Diffie-Hellman ephemeral key exchange over TLS and SSH.
+type: software
+authors:
+  - family-names: Pfeiffer
+    given-names: Szilárd
+version: 0.5.0
+license: Apache-2.0
+repository-code: "https://gitlab.com/dheatattack/dheater"
+url: "https://dheatattack.com/dheater"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20681371
+    description: "Concept DOI resolving to the latest version"
+keywords:
+  - denial-of-service
+  - diffie-hellman
+  - tls
+  - ssh
+  - cve-2002-20001

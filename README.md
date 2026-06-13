@@ -3,6 +3,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/dheater.svg)](https://pypi.org/project/dheater/)
 [![Python versions](https://img.shields.io/pypi/pyversions/dheater.svg)](https://pypi.org/project/dheater/)
 [![License](https://img.shields.io/pypi/l/dheater.svg)](https://choosealicense.com/licenses/apache-2.0/)
+[![DOI](https://zenodo.org/badge/401652275.svg)](https://doi.org/10.5281/zenodo.20681371)
 
 D(HE)ater is the proof-of-concept implementation of the D(HE)at attack ([CVE-2002-20001](
 https://nvd.nist.gov/vuln/detail/CVE-2002-20001)). For further information about the attack visit the
