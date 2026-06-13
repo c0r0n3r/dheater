@@ -1,0 +1,21 @@
+# D(HE)ater
+
+> D(HE)ater is the proof-of-concept implementation of the D(HE)at attack (CVE-2002-20001), a denial-of-service attack that heats up a server CPU by enforcing Diffie-Hellman ephemeral (DHE) key exchange over TLS and SSH. It uses CryptoLyzer to check DHE support of a target service and to generate the traffic required to perform the attack.
+
+D(HE)ater is a command-line tool. The `--protocol` option (`tls` or `ssh`) and the target `uri` are mandatory; `--timeout`, `--thread-num`, and `--key-size` are optional. It requires Python 3.9 or newer.
+
+## Documentation
+
+- [README](README.md): overview, requirements, installation, and command-line usage examples
+- [Project page](https://dheatattack.com/dheater): background, mitigation guidance, and affected implementations
+- [Technical paper](https://ieeexplore.ieee.org/document/10374117): full peer-reviewed description of the D(HE)at attack on IEEE Access
+
+## Reference
+
+- [CVE-2002-20001](https://nvd.nist.gov/vuln/detail/CVE-2002-20001): the vulnerability D(HE)ater demonstrates
+- [CryptoLyzer](https://gitlab.com/coroner/cryptolyzer): the dependency used to probe DHE support and generate attack traffic
+- [Source repository](https://gitlab.com/dheatattack/dheater): GitLab project hosting the code
+
+## Optional
+
+- [Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/): the license the code is released under
