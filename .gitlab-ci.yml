@@ -5,7 +5,7 @@ stages:
 - deploy
 
 before_script:
-- pip install -r dev-requirements.txt
+- pip install tox
 
 pylint:
   image: python:3.11-slim

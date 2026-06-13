@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 
-__title__ = 'DHEater'
-__version__ = '0.4.3'
-__description__ = 'D(HE)ater is an attacking tool heating the CPU by enforcing DHE KEX in case of TLS and SSH'
-__author__ = 'Szilárd Pfeiffer'
-__maintainer__ = 'Szilárd Pfeiffer'
-__maintainer_email__ = 'coroner@pfeifferszilard.hu'
-__url__ = 'https://gitlab.com/dheatattack/dheater'
-__license__ = 'Apache-2.0'
+import email.utils
+import importlib.metadata
+
+metadata = importlib.metadata.metadata('DHEater')
+
+__title__ = metadata['Name']
+__technical_name__ = __title__.lower()
+__version__ = metadata['Version']
+__description__ = metadata['Summary']
+__author__ = metadata['Author']
+__maintainer__ = email.utils.parseaddr(metadata['Maintainer-email'])[0]
+__maintainer_email__ = email.utils.parseaddr(metadata['Maintainer-email'])[1]
+__url__ = 'https://gitlab.com/dheatattack/' + __technical_name__
+__license__ = metadata.get('License-Expression') or metadata['License']

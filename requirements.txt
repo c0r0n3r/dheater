@@ -1,3 +1,0 @@
-attrs>=19.2.0
-cryptolyzer==1.0.0
-urllib3

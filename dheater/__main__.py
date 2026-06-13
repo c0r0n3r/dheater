@@ -68,7 +68,7 @@ from cryptolyzer.ssh.client import (
     SshKeyExchangeInitAnyAlgorithm,
 )
 
-from dheater import __setup__
+from dheater.__setup__ import __title__, __version__
 
 
 @attr.s
@@ -270,7 +270,7 @@ class DHEnforcerThreadSSH(DHEnforcerThreadBase):
         message_bytes = bytearray()
         protocol_message = SshProtocolMessage(
             protocol_version=SshProtocolVersion(SshVersion.SSH2, 0),
-            software_version=SshSoftwareVersionUnparsed(f'{__setup__.__title__}_{__setup__.__version__}'),
+            software_version=SshSoftwareVersionUnparsed(f'{__title__}_{__version__}'),
         )
         key_size, kex_algorithm = self.pre_check_result.get_key_size_and_algorithm()
         ciphers_result = self.pre_check_result.ciphers_result
@@ -600,7 +600,7 @@ def main():
             '    * Key size: {}',
             '    * Algorithm: {}',
         ]).format(
-            __setup__.__version__,
+            __version__,
             args.thread_num,
             pre_check_result.protocol_version,
             client.address,
