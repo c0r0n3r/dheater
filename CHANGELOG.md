@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-13
+
 ### Changed
 
 - Migrated packaging from `setup.py` to `pyproject.toml` (PEP 621).
 - Followed CryptoLyzer changes up to its version 1.0.0.
+- Raised the minimum supported Python version to 3.9.
+
+### Fixed
+
+- Fixed a crash on the TLS 1.3 code path caused by CryptoLyzer 1.0.0 renaming the
+  Diffie-Hellman named-curves attribute.
+- Initialised the signature algorithm list and the enforcer thread so they can no longer
+  be used before assignment for non-RSA/ECDSA cipher suites or an unknown protocol.
 
 ## [0.4.3] - 2023-12-28
 
