@@ -8,7 +8,7 @@ before_script:
 - pip install tox
 
 pylint:
-  image: python:3.11-slim
+  image: python:3.14-slim
   stage: test
   script: tox -e pylint
 
@@ -16,10 +16,10 @@ pep8:
   stage: test
   script: tox -e pep8
 
-python311:
-  image: python:3.11-slim
+python314:
+  image: python:3.14-slim
   stage: test
-  script: tox -e py311
+  script: tox -e py314
 
 pypy3:
   image: pypy:3-slim
