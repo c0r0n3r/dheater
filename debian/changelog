@@ -1,0 +1,5 @@
+dheater (1.0.0-1) unstable; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Szilárd Pfeiffer <coroner@pfeifferszilard.hu>  Sat, 13 Jun 2026 22:02:28 +0200

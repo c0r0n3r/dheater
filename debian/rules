@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=dheater
+
+# The test suite connects to a live TLS/SSH host, which is not available in the
+# Debian build environment, so the build-time test run is disabled.
+export PYBUILD_DISABLE=test
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild

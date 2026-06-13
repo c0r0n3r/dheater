@@ -1,0 +1,38 @@
+Source: dheater
+Section: net
+Priority: optional
+Maintainer: Szilárd Pfeiffer <coroner@pfeifferszilard.hu>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-setuptools,
+Standards-Version: 4.7.2
+Homepage: https://dheatattack.com/dheater
+Rules-Requires-Root: no
+X-Python3-Version: >= 3.9
+
+Package: dheater
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ cryptodatahub,
+ cryptolyzer,
+ cryptoparser,
+ python3-asn1crypto,
+ python3-attr,
+ python3-urllib3,
+Description: D(HE)at attack proof-of-concept against TLS and SSH
+ D(HE)ater is the proof-of-concept implementation of the D(HE)at attack
+ (CVE-2002-20001), a low-bandwidth denial-of-service attack that saturates a
+ server's CPU by enforcing Diffie-Hellman ephemeral (DHE) key exchange over
+ TLS and SSH.
+ .
+ It uses CryptoLyzer to detect whether a target supports DHE and to generate
+ the handshakes required to perform the attack. The package installs the
+ "dheat" command-line tool and the "dh_param_priv_key_size_setter" helper.
+ .
+ This tool performs a real denial-of-service attack and must only be used
+ against systems you own or are explicitly authorized to test.

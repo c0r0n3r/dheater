@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Debian packaging (a `debian/` directory) for building the tool as a `.deb`.
+
 ## [1.0.0] - 2026-06-13
 
 ### Added
