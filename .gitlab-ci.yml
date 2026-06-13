@@ -36,7 +36,6 @@ dockerhub:
     DOCKER_NAME: ${DOCKER_NAMESPACE}/${CI_PROJECT_NAME}
   before_script:
     - if ! [ -z ${CI_COMMIT_TAG} ] ; then DOCKER_NAME="${DOCKER_NAME}:${CI_COMMIT_TAG}" ; fi
-    - echo "[user=${CI_REGISTRY_USER}][reg=${CI_REGISTRY}][tokenlen=${#CI_REGISTRY_PASSWORD}]"
     - echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
   script:
     - docker build -t "$DOCKER_NAME" .
