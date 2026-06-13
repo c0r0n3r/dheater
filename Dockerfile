@@ -1,6 +1,6 @@
-FROM python:3.9-slim
+FROM python:3.13-slim
 
-LABEL maintainer Szilárd Pfeiffer "coroner@pfeifferszilard.hu"
+LABEL maintainer="Szilárd Pfeiffer <coroner@pfeifferszilard.hu>"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
