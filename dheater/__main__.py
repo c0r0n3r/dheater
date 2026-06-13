@@ -18,15 +18,12 @@ import urllib3
 from cryptodatahub.common.algorithm import Authentication
 from cryptodatahub.common.parameter import DHParamWellKnown
 from cryptodatahub.tls.algorithm import TlsCipherSuite, TlsNamedCurve, TlsSignatureAndHashAlgorithm
-
-from cryptodatahub.tls.algorithm import TlsCipherSuite, TlsNamedCurve, TlsSignatureAndHashAlgorithm
 from cryptodatahub.tls.version import TlsVersion
 
 from cryptoparser.common.exception import InvalidType, NotEnoughData
 
 from cryptoparser.tls.extension import (
     TlsExtensionsClient,
-    TlsExtensionEllipticCurves,
     TlsExtensionKeyShareClient,
     TlsExtensionKeyShareReservedClient,
     TlsExtensionType,
@@ -387,7 +384,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
         dh_public_key = None
         if protocol_version > TlsProtocolVersion(TlsVersion.TLS1_2):
             named_curves = list(sorted(
-                TlsHandshakeClientHelloKeyExchangeDHE._NAMED_CURVES,  # pylint: disable=protected-access
+                TlsHandshakeClientHelloKeyExchangeDHE.NAMED_CURVES,
                 key=lambda named_curve: named_curve.value.named_group.value.size, reverse=True
             ))
             if self.enforcable_key_size is not None:
@@ -457,6 +454,7 @@ class DHEnforcerThreadTLS(DHEnforcerThreadBase):
     def _prepare_packets(self):
         protocol_version = self.pre_check_result.protocol_version
         cipher_suite = self.pre_check_result.cipher_suite
+        signature_algorithms = []
         if cipher_suite.value.authentication == Authentication.RSA:
             signature_algorithms = [
                 TlsSignatureAndHashAlgorithm.RSA_SHA256,
@@ -527,9 +525,7 @@ class ParseURI(argparse.Action):  # pylint: disable=too-few-public-methods
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         super().__init__(option_strings, dest, **kwargs)
 
-    def __call__(
-            self, parser, namespace, values, option_string=None, first=(True, )
-    ):  # pylint: disable=too-many-arguments
+    def __call__(self, parser, namespace, values, option_string=None):
         try:
             namespace.uri = urllib3.util.parse_url(values)
         except urllib3.exceptions.LocationParseError as e:
@@ -561,6 +557,7 @@ def main():
     try:
         pre_check_result = None
         for _ in range(args.thread_num):
+            enforcer = None
             try:
                 if args.protocol == 'tls':
                     enforcer = DHEnforcerThreadTLS(args.uri, args.timeout, args.key_size, pre_check_result)
