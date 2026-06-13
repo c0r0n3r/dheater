@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-13
+
+### Added
+
+- Declared `asn1crypto` as an explicit dependency.
+
+### Changed
+
+- Install the DH parameter private key size setter (`dh_param_priv_key_size_setter`) as a
+  console entry point instead of a copied script.
+
+### Fixed
+
+- Exclude unrelated Markdown files from the source distribution; only README, CHANGELOG,
+  and SECURITY are shipped.
+
 ## [0.5.0] - 2026-06-13
 
 ### Changed

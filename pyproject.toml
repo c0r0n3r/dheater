@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "DHEater"
-version = "0.5.0"
+version = "1.0.0"
 description = "D(HE)ater is the proof-of-concept implementation of the D(HE)at attack (CVE-2002-20001) against TLS and SSH"
 readme = "README.md"
 license = "Apache-2.0"
