@@ -5,6 +5,14 @@ https://nvd.nist.gov/vuln/detail/CVE-2002-20001)). For further information about
 [project page](https://dheatattack.com/dheater) or read the [full technical paper](
 https://ieeexplore.ieee.org/document/10374117) on [IEEE Access](https://ieeeaccess.ieee.org/).
 
+## Disclaimer
+
+D(HE)ater is a proof-of-concept denial-of-service tool intended **only** for defensive
+security testing, mitigation verification, and research. Run it exclusively against systems
+you own or for which you have explicit, written authorization. Using it against systems
+without permission may be illegal and is likely to disrupt the targeted service. The authors
+provide the code as-is, without warranty, and accept no liability for any misuse or damage.
+
 ## Usage
 
 D(HE)ater is a command-line tool. The `--protocol` option and the target `uri` are mandatory:

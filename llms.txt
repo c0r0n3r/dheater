@@ -4,6 +4,8 @@
 
 D(HE)ater is a command-line tool. The `--protocol` option (`tls` or `ssh`) and the target `uri` are mandatory; `--timeout`, `--thread-num`, and `--key-size` are optional. It requires Python 3.9 or newer.
 
+**Disclaimer:** this is a proof-of-concept denial-of-service tool for defensive testing, mitigation verification, and research only. Use it solely against systems you own or are explicitly authorized to test; unauthorized use may be illegal and will disrupt the target. Provided as-is, without warranty or liability for misuse.
+
 ## Documentation
 
 - [README](README.md): overview, requirements, installation, and command-line usage examples
