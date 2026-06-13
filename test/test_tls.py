@@ -7,7 +7,7 @@ import sys
 import unittest
 import unittest.mock
 
-from dheater.__main__ import main
+from dheater.__main__ import DHEnforcerThreadTLS, main
 
 
 class TestMain(unittest.TestCase):
@@ -22,9 +22,9 @@ class TestMain(unittest.TestCase):
             main()
             self.assertEqual(stdout.getvalue().split(os.linesep)[0], error_msg)
 
-    def test_tls_no_dhe_support(self):
-
+    @unittest.mock.patch.object(DHEnforcerThreadTLS, '_pre_check', side_effect=NotImplementedError)
+    def test_tls_no_dhe_support(self, _pre_check):
         self._test_runtime_error(
-            ['--protocol', 'tls', 'ecc256.badssl.com'],
-            self._NO_DHE_SUPPORT_ERROR_PREFIX + 'uri="ecc256.badssl.com", protocol="tls"'
+            ['--protocol', 'tls', 'cloudflare.com'],
+            self._NO_DHE_SUPPORT_ERROR_PREFIX + 'uri="cloudflare.com", protocol="tls"'
         )
