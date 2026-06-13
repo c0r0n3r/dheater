@@ -32,13 +32,17 @@ dockerhub:
   services:
     - docker:dind
   variables:
-    DOCKER_NAME: coroner/${CI_PROJECT_NAME}
+    DOCKER_NAMESPACE: coroner
+    DOCKER_NAME: ${DOCKER_NAMESPACE}/${CI_PROJECT_NAME}
   before_script:
     - if ! [ -z ${CI_COMMIT_TAG} ] ; then DOCKER_NAME="${DOCKER_NAME}:${CI_COMMIT_TAG}" ; fi
     - echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" --password-stdin "${CI_REGISTRY}"
   script:
     - docker build -t "$DOCKER_NAME" .
     - docker push "$DOCKER_NAME"
+    - apk add --no-cache curl jq
+    - TOKEN=$(curl -s -X POST https://hub.docker.com/v2/users/login -H "Content-Type: application/json" -d "{\"username\":\"${CI_REGISTRY_USER}\",\"password\":\"${CI_REGISTRY_PASSWORD}\"}" | jq -r .token)
+    - curl -s -X PATCH "https://hub.docker.com/v2/repositories/${DOCKER_NAMESPACE}/${CI_PROJECT_NAME}/" -H "Authorization: JWT ${TOKEN}" -H "Content-Type: application/json" -d "$(jq -Rs '{description: "D(HE)at attack (CVE-2002-20001) PoC: Diffie-Hellman KEX enforcing DoS against TLS and SSH", full_description: .}' README.md)"
   only:
     refs:
       - branches
