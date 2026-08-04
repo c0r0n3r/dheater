@@ -1,7 +1,7 @@
 # D(HE)ater
 
 [![PyPI version](https://img.shields.io/pypi/v/dheater.svg)](https://pypi.org/project/dheater/)
-[![Python versions](https://img.shields.io/pypi/pyversions/dheater.svg)](https://pypi.org/project/dheater/)
+[![Python versions](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/dheater/)
 [![License](https://img.shields.io/pypi/l/dheater.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![DOI](https://zenodo.org/badge/401652275.svg)](https://doi.org/10.5281/zenodo.20681371)
 
